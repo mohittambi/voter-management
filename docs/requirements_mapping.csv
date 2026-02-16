@@ -1,0 +1,13 @@
+id,category,short_description,source_section,source_lines,acceptance_criteria,priority
+REQ-001,Voter Integration,Excel upload of voter list -> master database,3.1,"L26-L36","Master list uploads successful; uploaded records searchable; master fields non-editable",High
+REQ-002,Search & ID,Search by name/mobile/Aadhaar and open voter profile,3.2,"L37-L52","Search returns correct profile within 2 sec; staff can update allowed fields",High
+REQ-003,Service Requests,Create service requests against voter profiles,3.3,"L55-L62","Office user can create request; service appears in admin list",High
+REQ-004,Work Status,Status workflow & history,3.4,"L62-L71","Status changes recorded with timestamp; history view shows full audit trail",High
+REQ-005,Automated Comms,Trigger WhatsApp/SMS/AI call on status change,3.5,"L71-L83","Messages sent to registered mobile; template populated with name/service/status",High
+REQ-006,User Roles,Admin and Office User roles + RBAC,4,"L88-L101","Admins can manage services and upload lists; office users limited to search/create/update",High
+REQ-007,Family Mapping,Family head and member linking rules,5,"L101-L111","Family tree shows correct links; only master list used for linking",Medium
+REQ-008,Bday/Anniv,Automated birthday & anniversary messages,6,"L129-L142","Scheduled messages sent on date; reports show delivered/pending",Medium
+REQ-009,Form Builder,No-code dynamic form creation,7,"L143-L155","Admin creates form and it's immediately available for data entry",Medium
+REQ-010,Reporting,Dashboards, filters and exports,8,"L156-L195","Exports generate correct CSV/PDF; filters return accurate counts",High
+REQ-011,Integrations,WhatsApp/SMS/AI voice APIs,9,"L196-L203","Integration tested end-to-end; log contains delivery status and failure reasons",High
+REQ-012,Security,Secure login + audit logs,4/8,"L98-L101; L186-L191","RBAC enforced; audit logs capture data entry and status updates",High
