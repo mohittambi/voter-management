@@ -68,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const workbook = XLSX.read(buffer);
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const records = XLSX.utils.sheet_to_json(sheet);
+    const records = XLSX.utils.sheet_to_json<Record<string, any>>(sheet);
 
     // Upload file to Supabase Storage
     const storagePath = `${Date.now()}-${filename}`;
