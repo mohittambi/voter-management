@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { Wrench, Plus, ClipboardList, Pencil, Trash2, AlertTriangle, Save, Loader } from 'lucide-react';
 
 interface ServiceType {
   id: string;
@@ -71,15 +72,15 @@ export default function ServicesPage() {
             marginBottom: 24 
           }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#0f172a' }}>
-                🛠️ Service Types
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Wrench size={26} /> Service Types
               </h1>
               <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: 14 }}>
                 Manage service types for voter requests
               </p>
             </div>
-            <button onClick={openAddModal} className="btn-primary">
-              ➕ Add Service Type
+            <button onClick={openAddModal} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Plus size={14} /> Add Service Type
             </button>
           </div>
 
@@ -90,13 +91,13 @@ export default function ServicesPage() {
             </div>
           ) : services.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: 48 }}>
-              <div style={{ fontSize: 64, marginBottom: 16 }}>📋</div>
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><ClipboardList size={64} color="#94a3b8" /></div>
               <h2 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 600 }}>No Service Types</h2>
               <p style={{ margin: '0 0 24px', color: '#64748b', fontSize: 14 }}>
                 Create your first service type to get started
               </p>
-              <button onClick={openAddModal} className="btn-primary">
-                ➕ Add Service Type
+              <button onClick={openAddModal} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Plus size={14} /> Add Service Type
               </button>
             </div>
           ) : (
@@ -128,16 +129,16 @@ export default function ServicesPage() {
                     <button 
                       onClick={() => openEditModal(service)}
                       className="btn-secondary"
-                      style={{ padding: '8px 16px' }}
+                      style={{ padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                     >
-                      ✏️ Edit
+                      <Pencil size={13} /> Edit
                     </button>
                     <button 
                       onClick={() => handleDelete(service.id)}
                       className="btn-danger"
-                      style={{ padding: '8px 16px' }}
+                      style={{ padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                     >
-                      🗑️ Delete
+                      <Trash2 size={13} /> Delete
                     </button>
                   </div>
                 </div>
@@ -226,8 +227,8 @@ function ServiceModal({
     }}>
       <div className="card" style={{ width: '100%', maxWidth: 500 }}>
         <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: 16, marginBottom: 24 }}>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
-            {service ? '✏️ Edit Service Type' : '➕ Add Service Type'}
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {service ? <><Pencil size={18} /> Edit Service Type</> : <><Plus size={18} /> Add Service Type</>}
           </h2>
         </div>
 
@@ -279,7 +280,7 @@ function ServiceModal({
               fontSize: 14,
               marginBottom: 20
             }}>
-              ⚠️ {error}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {error}</span>
             </div>
           )}
 
@@ -297,7 +298,7 @@ function ServiceModal({
               className="btn-primary"
               disabled={loading}
             >
-              {loading ? '⏳ Saving...' : service ? '💾 Update' : '✨ Create'}
+              {loading ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Loader size={14} /> Saving...</span> : service ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={14} /> Update</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={14} /> Create</span>}
             </button>
           </div>
         </form>

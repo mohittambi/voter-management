@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import { Vote, AlertTriangle, Loader2, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -42,7 +43,11 @@ export default function LoginPage() {
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
       }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>🗳️</div>
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ width: 80, height: 80, borderRadius: 20, background: 'linear-gradient(135deg, #0D47A1, #1565C0)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(13,71,161,0.3)' }}>
+              <Vote size={40} color="white" />
+            </div>
+          </div>
           <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#0f172a', letterSpacing: '-0.5px' }}>
             Voter Portal
           </h1>
@@ -88,7 +93,7 @@ export default function LoginPage() {
               fontSize: 14,
               marginBottom: 20
             }}>
-              ⚠️ {error}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {error}</span>
             </div>
           )}
 
@@ -98,7 +103,7 @@ export default function LoginPage() {
             className="btn-primary"
             style={{ width: '100%', fontSize: 16, padding: '14px 24px' }}
           >
-            {loading ? '⏳ Signing in...' : '🔐 Sign In'}
+            {loading ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Loader2 size={16} /> Signing in...</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><LogIn size={16} /> Sign In</span>}
           </button>
         </form>
 

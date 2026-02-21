@@ -3,6 +3,8 @@ import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { colors, SR_STATUS_CONFIG } from '../lib/colors';
+import React from 'react';
+import { Users, FileText, Home, UserCheck, MapPin, ClipboardList, User, Plus, Settings, AlertTriangle } from 'lucide-react';
 
 const SR_STATUSES = Object.keys(SR_STATUS_CONFIG);
 
@@ -16,7 +18,7 @@ function SkeletonCard() {
 }
 
 function StatCard({ label, labelMr, value, icon, iconBg, iconColor, numColor, link }: {
-  label: string; labelMr: string; value: number | string; icon: string;
+  label: string; labelMr: string; value: number | string; icon: React.ReactNode;
   iconBg: string; iconColor: string; numColor: string; link?: string;
 }) {
   const content = (
@@ -30,7 +32,7 @@ function StatCard({ label, labelMr, value, icon, iconBg, iconColor, numColor, li
     }}
     onMouseEnter={e => { if (link) { e.currentTarget.style.boxShadow = '0 4px 16px rgba(13,71,161,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
     onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-      <div style={{ width: 48, height: 48, borderRadius: 12, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, color: iconColor }}>
+      <div style={{ width: 48, height: 48, borderRadius: 12, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: iconColor }}>
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -62,9 +64,9 @@ export default function Dashboard() {
   return (
     <ProtectedRoute>
       <DashboardLayout>
-        {error && (
-          <div style={{ background: '#FFEBEE', border: `1px solid #EF9A9A`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, color: colors.error, fontSize: 14 }}>
-            ⚠️ {error}
+          {error && (
+          <div style={{ background: '#FFEBEE', border: `1px solid #EF9A9A`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, color: colors.error, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <AlertTriangle size={14} /> {error}
           </div>
         )}
 
@@ -76,11 +78,11 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
             {loading ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />) : (<>
-              <StatCard label="Total Voters"          labelMr="एकूण मतदार"       value={stats?.voters?.total ?? 0}    icon="👥" iconBg={colors.primaryLight} iconColor={colors.primary}   numColor={colors.primary}   link="/voters" />
-              <StatCard label="Voter Profiles"        labelMr="मतदार प्रोफाइल"  value={stats?.voters?.profiles ?? 0} icon="📝" iconBg="#EDE7F6"             iconColor="#4527A0"          numColor="#4527A0"          link="/voters" />
-              <StatCard label="Families"              labelMr="कुटुंबे"          value={stats?.voters?.families ?? 0} icon="👨‍👩‍👧‍👦" iconBg="#E0F2F1"           iconColor={colors.accent}   numColor={colors.accent}    link="/voters" />
-              <StatCard label="Workers / Karyakartas" labelMr="कार्यकर्ते"      value={stats?.voters?.workers ?? 0}  icon="🙋" iconBg="#E8F5E9"             iconColor={colors.success}   numColor={colors.success}   />
-              <StatCard label="Villages"              labelMr="गावे"             value={stats?.voters?.villages ?? 0} icon="🏘️" iconBg="#FFF8E1"            iconColor="#E65100"          numColor="#E65100"          />
+              <StatCard label="Total Voters"          labelMr="एकूण मतदार"       value={stats?.voters?.total ?? 0}    icon={<Users size={22} />}      iconBg={colors.primaryLight} iconColor={colors.primary}   numColor={colors.primary}   link="/voters" />
+              <StatCard label="Voter Profiles"        labelMr="मतदार प्रोफाइल"  value={stats?.voters?.profiles ?? 0} icon={<FileText size={22} />}   iconBg="#EDE7F6"             iconColor="#4527A0"          numColor="#4527A0"          link="/voters" />
+              <StatCard label="Families"              labelMr="कुटुंबे"          value={stats?.voters?.families ?? 0} icon={<Home size={22} />}       iconBg="#E0F2F1"             iconColor={colors.accent}   numColor={colors.accent}    link="/voters" />
+              <StatCard label="Workers / Karyakartas" labelMr="कार्यकर्ते"      value={stats?.voters?.workers ?? 0}  icon={<UserCheck size={22} />}  iconBg="#E8F5E9"             iconColor={colors.success}   numColor={colors.success}   />
+              <StatCard label="Villages"              labelMr="गावे"             value={stats?.voters?.villages ?? 0} icon={<MapPin size={22} />}     iconBg="#FFF8E1"             iconColor="#E65100"          numColor="#E65100"          />
             </>)}
           </div>
         </div>
@@ -94,8 +96,8 @@ export default function Dashboard() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 14 }}>
             {loading ? Array.from({ length: 2 }).map((_, i) => <SkeletonCard key={i} />) : (<>
-              <StatCard label="Total Requests"    labelMr="एकूण विनंत्या"         value={stats?.serviceRequests?.total ?? 0}          icon="📋" iconBg="#E3F2FD" iconColor={colors.statusSubmitted} numColor={colors.statusSubmitted} link="/service-requests" />
-              <StatCard label="Unique Requesters" labelMr="वेगळे विनंती कर्ते"   value={stats?.serviceRequests?.uniqueRaisers ?? 0}   icon="👤" iconBg="#FFF8E1" iconColor={colors.warning}          numColor={colors.warning}          link="/service-requests" />
+              <StatCard label="Total Requests"    labelMr="एकूण विनंत्या"         value={stats?.serviceRequests?.total ?? 0}          icon={<ClipboardList size={22} />} iconBg="#E3F2FD" iconColor={colors.statusSubmitted} numColor={colors.statusSubmitted} link="/service-requests" />
+              <StatCard label="Unique Requesters" labelMr="वेगळे विनंती कर्ते"   value={stats?.serviceRequests?.uniqueRaisers ?? 0}   icon={<User size={22} />}          iconBg="#FFF8E1" iconColor={colors.warning}          numColor={colors.warning}          link="/service-requests" />
             </>)}
           </div>
 
@@ -165,10 +167,10 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
             {[
-              { href: '/voters',           icon: '👥', label: 'View All Voters',   labelMr: 'सर्व मतदार पहा',    bg: colors.primary },
-              { href: '/service-requests', icon: '📋', label: 'Service Requests',  labelMr: 'सेवा विनंत्या',     bg: colors.statusShared },
-              { href: '/service-requests', icon: '➕', label: 'New Request',        labelMr: 'नवीन विनंती',       bg: colors.accent },
-              { href: '/admin',            icon: '⚙️', label: 'Admin Panel',       labelMr: 'प्रशासन',           bg: colors.statusClosed },
+              { href: '/voters',           icon: <Users size={22} />,       label: 'View All Voters',   labelMr: 'सर्व मतदार पहा',    bg: colors.primary },
+              { href: '/service-requests', icon: <ClipboardList size={22} />, label: 'Service Requests', labelMr: 'सेवा विनंत्या',     bg: colors.statusShared },
+              { href: '/service-requests', icon: <Plus size={22} />,        label: 'New Request',       labelMr: 'नवीन विनंती',       bg: colors.accent },
+              { href: '/admin',            icon: <Settings size={22} />,    label: 'Admin Panel',       labelMr: 'प्रशासन',           bg: colors.statusClosed },
             ].map((a, i) => (
               <Link key={i} href={a.href} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
@@ -179,7 +181,7 @@ export default function Dashboard() {
               }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.22)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)'; }}>
-                <span style={{ fontSize: 24 }}>{a.icon}</span>
+                <span style={{ display: 'flex', alignItems: 'center' }}>{a.icon}</span>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{a.label}</div>
                   <div style={{ fontSize: 12, opacity: 0.85 }}>{a.labelMr}</div>

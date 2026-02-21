@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Calendar, RefreshCw, Check, AlertTriangle } from 'lucide-react';
 
 type DateRange = {
   start: string;
@@ -64,8 +65,8 @@ export default function DateRangePicker({ onApply, onClear, currentRange }: Date
 
   return (
     <div className="card" style={{ background: '#f0f9ff', border: '1px solid #bae6fd' }}>
-      <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#0c4a6e' }}>
-        📅 तारीख फिल्टर / Date Range Filter
+      <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#0c4a6e', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Calendar size={16} /> तारीख फिल्टर / Date Range Filter
       </h3>
       
       {/* Quick Presets */}
@@ -125,7 +126,7 @@ export default function DateRangePicker({ onApply, onClear, currentRange }: Date
           fontSize: 13,
           marginBottom: 12
         }}>
-          ⚠️ {error}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={13} /> {error}</span>
         </div>
       )}
 
@@ -134,16 +135,16 @@ export default function DateRangePicker({ onApply, onClear, currentRange }: Date
         <button
           onClick={handleClear}
           className="btn-secondary"
-          style={{ padding: '8px 16px', fontSize: 14 }}
+          style={{ padding: '8px 16px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          🔄 Clear Filter
+          <RefreshCw size={14} /> Clear Filter
         </button>
         <button
           onClick={handleApply}
           className="btn-primary"
-          style={{ padding: '8px 16px', fontSize: 14 }}
+          style={{ padding: '8px 16px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          ✅ Apply Filter
+          <Check size={14} /> Apply Filter
         </button>
       </div>
 
@@ -158,7 +159,7 @@ export default function DateRangePicker({ onApply, onClear, currentRange }: Date
           fontSize: 13,
           color: '#166534'
         }}>
-          ✓ Active: {new Date(currentRange.start).toLocaleDateString()} - {new Date(currentRange.end).toLocaleDateString()}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={13} /> Active: {new Date(currentRange.start).toLocaleDateString()} - {new Date(currentRange.end).toLocaleDateString()}</span>
         </div>
       )}
     </div>

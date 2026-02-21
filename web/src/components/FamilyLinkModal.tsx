@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link2, X, Search, RefreshCw, Users } from 'lucide-react';
 
 export default function FamilyLinkModal({ voter, onClose }: { readonly voter: any; readonly onClose: () => void }) {
   const [q, setQ] = useState('');
@@ -57,21 +58,21 @@ export default function FamilyLinkModal({ voter, onClose }: { readonly voter: an
         overflow: 'auto'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <h3 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f172a' }}>
-            🔗 Link Family Member
+          <h3 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link2 size={22} /> Link Family Member
           </h3>
           <button
             onClick={onClose}
             style={{
               background: 'transparent',
               border: 'none',
-              fontSize: 24,
               cursor: 'pointer',
               color: '#64748b',
-              padding: 4
+              padding: 4,
+              display: 'flex', alignItems: 'center',
             }}
           >
-            ✕
+            <X size={24} />
           </button>
         </div>
 
@@ -91,8 +92,8 @@ export default function FamilyLinkModal({ voter, onClose }: { readonly voter: an
               className="input"
               style={{ flex: 1 }}
             />
-            <button onClick={doSearch} disabled={searching} className="btn-primary">
-              {searching ? '🔄' : '🔍'} Search
+            <button onClick={doSearch} disabled={searching} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {searching ? <RefreshCw size={14} className="spin" /> : <Search size={14} />} Search
             </button>
           </div>
         </div>
@@ -149,9 +150,9 @@ export default function FamilyLinkModal({ voter, onClose }: { readonly voter: an
                   <button
                     onClick={() => linkMember(r.id, `${r.first_name} ${r.surname}`)}
                     className="btn-primary"
-                    style={{ padding: '8px 20px', fontSize: 13 }}
+                    style={{ padding: '8px 20px', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   >
-                    🔗 Link
+                    <Link2 size={13} /> Link
                   </button>
                 </div>
               ))}
@@ -161,7 +162,7 @@ export default function FamilyLinkModal({ voter, onClose }: { readonly voter: an
 
         {q && results.length === 0 && !searching && (
           <div style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Users size={48} color="#94a3b8" /></div>
             <p style={{ margin: 0 }}>No voters found matching "{q}"</p>
           </div>
         )}

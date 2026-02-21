@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { colors, VOTER_STATUS_CONFIG } from '../lib/colors';
+import { Search, SlidersHorizontal, Upload, X, AlertTriangle, CheckCircle2, Copy, Phone } from 'lucide-react';
 
 const PAGE_SIZES = [25, 50, 100];
 const STATUS_OPTIONS = ['Active', 'मयत', 'दुबार', 'बेपत्ता'];
@@ -51,7 +52,7 @@ function CopyButton({ text }: { text: string }) {
       transition: 'all 0.15s',
       flexShrink: 0,
     }}>
-      {copied ? '✓' : '⎘'}
+      {copied ? <CheckCircle2 size={11} /> : <Copy size={11} />}
     </button>
   );
 }
@@ -68,8 +69,9 @@ function CallButton({ mobile }: { mobile: string }) {
       textDecoration: 'none',
       cursor: 'pointer',
       flexShrink: 0,
+      display: 'inline-flex', alignItems: 'center',
     }}>
-      📞
+      <Phone size={11} />
     </a>
   );
 }
@@ -113,11 +115,11 @@ function UploadModal({ onClose, onSuccess }: UploadModalProps) {
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Upload Voter List</h3>
             <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>मतदार यादी अपलोड करा</div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
         </div>
         {result ? (
           <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><CheckCircle2 size={48} color="#10b981" /></div>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#065f46', marginBottom: 8 }}>Upload Successful / अपलोड यशस्वी!</div>
             <div style={{ fontSize: 14, color: '#475569' }}>{result.imported} voters imported / {result.imported} मतदार आयात</div>
             <div style={{ fontSize: 14, color: '#475569' }}>{result.families} families linked / {result.families} कुटुंबे जोडली</div>
@@ -128,7 +130,7 @@ function UploadModal({ onClose, onSuccess }: UploadModalProps) {
             <div style={{ border: '2px dashed #cbd5e1', borderRadius: 12, padding: 32, textAlign: 'center', background: '#f8fafc', cursor: uploading ? 'not-allowed' : 'pointer' }}>
               <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} disabled={uploading} style={{ display: 'none' }} id="upload-file" />
               <label htmlFor="upload-file" style={{ cursor: uploading ? 'not-allowed' : 'pointer' }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>{uploading ? '⏳' : '📤'}</div>
+                <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Upload size={40} color={uploading ? '#3b82f6' : '#94a3b8'} /></div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', marginBottom: 6 }}>
                   {uploading ? 'Uploading... / अपलोड होत आहे...' : fileName ? fileName : 'Click to select file / फाइल निवडण्यासाठी क्लिक करा'}
                 </div>
@@ -267,8 +269,8 @@ export default function VotersPage() {
               placeholder="Search by name, voter ID, mobile / नाव, मतदार ID, मोबाईल शोधा..."
               style={{ flex: 1, padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none', minWidth: 0 }}
             />
-            <button onClick={handleSearch} className="btn-primary" style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap' }}>
-              🔍 Search
+            <button onClick={handleSearch} className="btn-primary" style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Search size={14} /> Search
             </button>
           </div>
           <button onClick={() => setShowFilters(f => !f)} style={{
@@ -276,10 +278,10 @@ export default function VotersPage() {
             background: showFilters ? '#ede9fe' : 'white', color: showFilters ? '#6d28d9' : '#374151',
             fontSize: 14, cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap',
           }}>
-            ⚙️ Filters {hasFilters ? `(${[q, booth, village, gender, caste, ageMin, ageMax, status].filter(Boolean).length})` : ''}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><SlidersHorizontal size={14} /> Filters {hasFilters ? `(${[q, booth, village, gender, caste, ageMin, ageMax, status].filter(Boolean).length})` : ''}</span>
           </button>
-          <button onClick={() => setShowUpload(true)} className="btn-primary" style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', background: 'linear-gradient(135deg,#10b981,#059669)' }}>
-            📤 Upload
+          <button onClick={() => setShowUpload(true)} className="btn-primary" style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', background: 'linear-gradient(135deg,#10b981,#059669)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Upload size={14} /> Upload
           </button>
         </div>
 
@@ -322,8 +324,8 @@ export default function VotersPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
               {hasFilters && (
-                <button onClick={clearFilters} style={{ width: '100%', padding: '8px 10px', border: '1px solid #fecaca', borderRadius: 6, background: '#fee2e2', color: '#991b1b', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
-                  ✕ Clear All
+                <button onClick={clearFilters} style={{ width: '100%', padding: '8px 10px', border: '1px solid #fecaca', borderRadius: 6, background: '#fee2e2', color: '#991b1b', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                  <X size={12} /> Clear All
                 </button>
               )}
             </div>
@@ -332,7 +334,7 @@ export default function VotersPage() {
 
         {error && (
           <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#991b1b', fontSize: 14 }}>
-            ⚠️ {error}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {error}</span>
           </div>
         )}
 

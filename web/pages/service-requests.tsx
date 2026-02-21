@@ -3,6 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../contexts/AuthContext';
 import { colors, SR_STATUS_CONFIG } from '../lib/colors';
+import { X, SlidersHorizontal, Plus, Check, MessageCircle, Clock, AlertTriangle } from 'lucide-react';
 
 const SR_STATUSES = [
   'Document Submitted',
@@ -101,7 +102,7 @@ function NewRequestModal({ onClose, onCreated }: NewRequestModalProps) {
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>New Service Request</h3>
             <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>नवीन सेवा विनंती</div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
         </div>
 
         {error && <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#991b1b', fontSize: 13 }}>{error}</div>}
@@ -120,7 +121,7 @@ function NewRequestModal({ onClose, onCreated }: NewRequestModalProps) {
                   </div>
                   <div style={{ fontSize: 12, color: '#64748b' }}>{selectedVoter.voter_id} · {selectedVoter.village || ''}</div>
                 </div>
-                <button type="button" onClick={() => { setSelectedVoter(null); setVoterSearch(''); }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                <button type="button" onClick={() => { setSelectedVoter(null); setVoterSearch(''); }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
               </div>
             ) : (
               <div style={{ position: 'relative' }}>
@@ -171,7 +172,7 @@ function NewRequestModal({ onClose, onCreated }: NewRequestModalProps) {
               Cancel / रद्द करा
             </button>
             <button type="submit" disabled={submitting} className="btn-primary" style={{ padding: '10px 24px' }}>
-              {submitting ? 'Creating...' : '✓ Create Request / विनंती तयार करा'}
+              {submitting ? 'Creating...' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={14} /> Create Request / विनंती तयार करा</span>}
             </button>
           </div>
         </form>
@@ -201,7 +202,7 @@ function StatusHistoryModal({ requestId, onClose }: StatusHistoryModalProps) {
             <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Status History</h3>
             <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>स्थिती बदल नोंदी · Request #{requestId.slice(0, 8)}</div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
         </div>
         {loading ? (
           <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>Loading... / लोड होत आहे...</div>
@@ -363,10 +364,10 @@ export default function ServiceRequestsPage() {
             background: showFilters ? '#ede9fe' : 'white', color: showFilters ? '#6d28d9' : '#374151',
             fontSize: 14, cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap',
           }}>
-            ⚙️ Filters {hasFilters ? `(active)` : ''}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><SlidersHorizontal size={14} /> Filters {hasFilters ? `(active)` : ''}</span>
           </button>
           <button onClick={() => setShowNewModal(true)} className="btn-primary" style={{ padding: '10px 20px', fontSize: 14, whiteSpace: 'nowrap' }}>
-            ➕ New Request / नवीन विनंती
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Plus size={14} /> New Request / नवीन विनंती</span>
           </button>
         </div>
 
@@ -406,14 +407,14 @@ export default function ServiceRequestsPage() {
                   setDateFrom(''); setDateTo(''); setQ('');
                   setPage(1); fetchRequests({ page: 1, q: '', status: '', service_type: '', village: '', date_from: '', date_to: '' });
                 }} style={{ width: '100%', padding: '8px 10px', border: '1px solid #fecaca', borderRadius: 6, background: '#fee2e2', color: '#991b1b', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
-                  ✕ Clear All
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> Clear All</span>
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {error && <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#991b1b', fontSize: 14 }}>⚠️ {error}</div>}
+        {error && <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#991b1b', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {error}</div>}
 
         {/* Table */}
         <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
@@ -479,13 +480,13 @@ export default function ServiceRequestsPage() {
                           <a href={whatsappUrl(r.mobile, r.voter_name_english, r.service_type_name, r.status)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} title="WhatsApp" style={{
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                             width: 30, height: 30, borderRadius: 6, background: '#dcfce7', border: '1px solid #bbf7d0',
-                            textDecoration: 'none', fontSize: 16,
-                          }}>💬</a>
+                            textDecoration: 'none',
+                          }}><MessageCircle size={15} /></a>
                         )}
                         <button onClick={() => setHistoryRequestId(r.id)} title="View status history / स्थिती इतिहास पहा" style={{
                           width: 30, height: 30, borderRadius: 6, background: '#f0f9ff', border: '1px solid #bae6fd',
-                          cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>🕐</button>
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}><Clock size={15} /></button>
                       </div>
                     </td>
                   </tr>
@@ -507,8 +508,8 @@ export default function ServiceRequestsPage() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                     <StatusBadge status={r.status} />
-                    {r.mobile && (
-                      <a href={whatsappUrl(r.mobile, r.voter_name_english, r.service_type_name, r.status)} target="_blank" rel="noreferrer" style={{ fontSize: 20, textDecoration: 'none' }}>💬</a>
+                      {r.mobile && (
+                      <a href={whatsappUrl(r.mobile, r.voter_name_english, r.service_type_name, r.status)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}><MessageCircle size={20} color="#16a34a" /></a>
                     )}
                   </div>
                 </div>
@@ -524,8 +525,8 @@ export default function ServiceRequestsPage() {
                         {SR_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
-                    <button onClick={() => setHistoryRequestId(r.id)} style={{ width: '100%', padding: '8px', border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', color: '#0369a1', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
-                      🕐 View History / इतिहास पहा
+                    <button onClick={() => setHistoryRequestId(r.id)} style={{ width: '100%', padding: '8px', border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', color: '#0369a1', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <Clock size={13} /> View History / इतिहास पहा
                     </button>
                   </div>
                 )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getAnonClient } from '../lib/supabaseClient';
 import DashboardLayout from '../components/DashboardLayout';
+import { Loader2, AlertTriangle, FolderOpen, FileText, Download } from 'lucide-react';
 
 export default function ImportsPage() {
   const [imports, setImports] = useState<any[]>([]);
@@ -43,7 +44,7 @@ export default function ImportsPage() {
   if (loading) return (
     <DashboardLayout>
       <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><Loader2 size={48} color="#94a3b8" /></div>
         <p style={{ margin: 0, color: '#64748b' }}>Loading imports...</p>
       </div>
     </DashboardLayout>
@@ -52,7 +53,7 @@ export default function ImportsPage() {
   if (error) return (
     <DashboardLayout>
       <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><AlertTriangle size={48} color="#ef4444" /></div>
         <p style={{ margin: 0, color: '#ef4444', fontWeight: 600 }}>Error: {error}</p>
       </div>
     </DashboardLayout>
@@ -63,7 +64,7 @@ export default function ImportsPage() {
       <div className="card fade-in">
         {imports.length === 0 && (
           <div style={{ textAlign: 'center', padding: 60 }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>📂</div>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><FolderOpen size={64} color="#94a3b8" /></div>
             <h3 style={{ margin: 0, fontSize: 20, color: '#0f172a', fontWeight: 600 }}>No imports yet</h3>
             <p style={{ margin: '8px 0 0', color: '#64748b' }}>Upload your first voter list to get started!</p>
           </div>
@@ -100,8 +101,9 @@ export default function ImportsPage() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: 18
-                        }}>📄</div>
+                        }}>
+                          <FileText size={18} color="#3b82f6" />
+                        </div>
                         <span style={{ fontWeight: 600 }}>{imp.filename}</span>
                       </div>
                     </td>
@@ -116,7 +118,7 @@ export default function ImportsPage() {
                           className="btn-primary"
                           style={{ padding: '8px 16px', fontSize: 13 }}
                         >
-                          📥 Download
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Download size={13} /> Download</span>
                         </button>
                       )}
                     </td>

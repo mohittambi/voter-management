@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { Upload, FolderOpen, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function UploadPage() {
   const [fileName, setFileName] = useState('');
@@ -53,7 +54,7 @@ export default function UploadPage() {
           margin: '0 auto'
         }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>📤</div>
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><Upload size={64} color="#0D47A1" /></div>
           <h3 style={{ margin: 0, fontSize: 24, color: '#1f2937' }}>मतदार यादी अपलोड करा / Upload Voter List</h3>
           <p style={{ margin: '8px 0 0', color: '#6b7280' }}>Excel (Manoli.xlsx format) किंवा CSV फाइल अपलोड करा</p>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#9ca3af' }}>
@@ -81,7 +82,7 @@ export default function UploadPage() {
             <label htmlFor="file-upload" style={{ cursor: 'pointer' }}>
               {!uploading && !success && (
                 <>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>📁</div>
+                  <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><FolderOpen size={48} color="#94a3b8" /></div>
                   <p style={{ margin: 0, fontSize: 16, color: '#1f2937', fontWeight: 500 }}>
                     Click to select file or drag and drop
                   </p>
@@ -92,7 +93,7 @@ export default function UploadPage() {
               )}
               {uploading && (
                 <>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>⏳</div>
+                  <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Loader2 size={48} color="#3b82f6" /></div>
                   <p style={{ margin: 0, fontSize: 16, color: '#3b82f6', fontWeight: 500 }}>
                     Uploading {fileName}...
                   </p>
@@ -100,7 +101,7 @@ export default function UploadPage() {
               )}
             {success && !uploading && (
               <>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+                <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><CheckCircle2 size={48} color="#10b981" /></div>
                 <p style={{ margin: 0, fontSize: 16, color: '#10b981', fontWeight: 500 }}>
                   अपलोड यशस्वी! / Upload successful!
                 </p>

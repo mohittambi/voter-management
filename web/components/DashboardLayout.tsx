@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../lib/colors';
+import { LayoutDashboard, Users, ClipboardList, Settings, Vote, Crown, User, LogOut, Menu, X } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { href: '/',                 label: 'Dashboard',        labelMr: 'डॅशबोर्ड',    icon: '📊', adminOnly: false },
-  { href: '/voters',           label: 'Voters',           labelMr: 'मतदार',       icon: '👥', adminOnly: false },
-  { href: '/service-requests', label: 'Service Requests', labelMr: 'सेवा विनंत्या', icon: '📋', adminOnly: false },
-  { href: '/admin',            label: 'Admin',            labelMr: 'प्रशासन',     icon: '⚙️', adminOnly: true },
+  { href: '/',                 label: 'Dashboard',        labelMr: 'डॅशबोर्ड',    icon: <LayoutDashboard size={19} />, adminOnly: false },
+  { href: '/voters',           label: 'Voters',           labelMr: 'मतदार',       icon: <Users size={19} />,           adminOnly: false },
+  { href: '/service-requests', label: 'Service Requests', labelMr: 'सेवा विनंत्या', icon: <ClipboardList size={19} />,  adminOnly: false },
+  { href: '/admin',            label: 'Admin',            labelMr: 'प्रशासन',     icon: <Settings size={19} />,        adminOnly: true },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -50,8 +51,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               width: 44, height: 44, borderRadius: 10,
               background: 'rgba(255,255,255,0.15)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 22, flexShrink: 0,
-            }}>🗳️</div>
+              flexShrink: 0,
+            }}><Vote size={22} color="white" /></div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>Voter Portal</div>
               <div style={{ fontSize: 11, opacity: 0.75, marginTop: 2 }}>मतदार व्यवस्थापन</div>
@@ -81,7 +82,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               }}
               onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
               onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
-                <span style={{ fontSize: 19, flexShrink: 0 }}>{item.icon}</span>
+                <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{item.icon}</span>
                 <div>
                   <div style={{ lineHeight: 1.2 }}>{item.label}</div>
                   <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.2 }}>{item.labelMr}</div>
@@ -104,7 +105,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               fontWeight: 600,
               border: '1px solid rgba(255,255,255,0.25)',
             }}>
-              {isAdmin ? '👑 Admin' : '👤 Office User'}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>{isAdmin ? <><Crown size={11} /> Admin</> : <><User size={11} /> Office User</>}</span>
             </span>
           </div>
           {user && (
@@ -119,10 +120,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'background 0.15s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(183,28,28,0.32)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(183,28,28,0.2)'}>
-              🚪 Logout
+              <LogOut size={14} /> Logout
             </button>
           )}
         </div>
@@ -142,7 +144,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
       }} className="mobile-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22 }}>🗳️</span>
+          <Vote size={22} color="white" />
           <div>
             <div style={{ fontWeight: 700, fontSize: 15 }}>Voter Portal</div>
             <div style={{ fontSize: 11, opacity: 0.75 }}>मतदार व्यवस्थापन</div>
@@ -150,10 +152,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         <button onClick={() => setMobileMenuOpen(o => !o)} style={{
           background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8,
-          color: 'white', fontSize: 20, width: 40, height: 40,
+          color: 'white', width: 40, height: 40,
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {mobileMenuOpen ? '✕' : '☰'}
+          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </header>
 
@@ -180,7 +182,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     borderRadius: 10, fontWeight: active ? 700 : 500, fontSize: 15,
                     borderLeft: active ? '3px solid rgba(255,255,255,0.9)' : '3px solid transparent',
                   }}>
-                    <span style={{ fontSize: 20 }}>{item.icon}</span>
+                    <span style={{ display: 'flex', alignItems: 'center' }}>{item.icon}</span>
                     <div>
                       <div>{item.label}</div>
                       <div style={{ fontSize: 12, opacity: 0.7 }}>{item.labelMr}</div>
@@ -196,7 +198,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   width: '100%', padding: '10px',
                   background: 'rgba(183,28,28,0.2)', border: '1px solid rgba(183,28,28,0.35)',
                   borderRadius: 8, color: '#FFCDD2', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 8,
-                }}>🚪 Logout</button>
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}><LogOut size={14} /> Logout</button>
               )}
             </div>
           </div>
@@ -234,7 +237,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 color: isAdmin ? colors.primary : colors.accent,
                 border: `1px solid ${isAdmin ? '#90CAF9' : '#80CBC4'}`,
               }}>
-                {isAdmin ? '👑 Admin' : '👤 Office User'}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>{isAdmin ? <><Crown size={11} /> Admin</> : <><User size={11} /> Office User</>}</span>
               </div>
               <div style={{
                 width: 36, height: 36, borderRadius: 8,

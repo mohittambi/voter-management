@@ -6,6 +6,11 @@ import BoothChart from '../components/Charts/BoothChart';
 import GenderPieChart from '../components/Charts/GenderPieChart';
 import AgeLineChart from '../components/Charts/AgeLineChart';
 import VillageBarChart from '../components/Charts/VillageBarChart';
+import {
+  BarChart3, Users, Home, UserCheck, Briefcase, CheckCircle, AlertTriangle,
+  User, MapPin, Vote as VoteIcon, Download, Smartphone, Table2, LineChart,
+  ChevronUp, ChevronDown, Search,
+} from 'lucide-react';
 
 type DateRange = {
   start: string;
@@ -137,8 +142,8 @@ export default function ReportsPage() {
       <DashboardLayout>
         <div>
           <div style={{ marginBottom: 32 }}>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#0f172a' }}>
-              📊 अहवाल / Reports & Analytics
+            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <BarChart3 size={28} /> अहवाल / Reports & Analytics
             </h1>
             <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: 14 }}>
               Comprehensive voter data analytics and statistics
@@ -161,39 +166,39 @@ export default function ReportsPage() {
               className={viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}
               style={{ padding: '10px 24px', fontSize: 14 }}
             >
-              📊 Table View
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Table2 size={16} /> Table View</span>
             </button>
             <button
               onClick={() => setViewMode('charts')}
               className={viewMode === 'charts' ? 'btn-primary' : 'btn-secondary'}
               style={{ padding: '10px 24px', fontSize: 14 }}
             >
-              📈 Chart View
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><LineChart size={16} /> Chart View</span>
             </button>
           </div>
 
           {/* Summary Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginBottom: 32 }}>
             <div className="card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>👥</div>
+              <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Users size={40} color="rgba(255,255,255,0.9)" /></div>
               <p style={{ margin: 0, fontSize: 14, opacity: 0.9 }}>एकूण मतदार / Total Voters</p>
               <p style={{ margin: '8px 0 0', fontSize: 32, fontWeight: 700 }}>{stats?.totals?.voters || 0}</p>
             </div>
 
             <div className="card" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', border: 'none' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>👨‍👩‍👧‍👦</div>
+              <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Home size={40} color="rgba(255,255,255,0.9)" /></div>
               <p style={{ margin: 0, fontSize: 14, opacity: 0.9 }}>एकूण कुटुंबे / Total Families</p>
               <p style={{ margin: '8px 0 0', fontSize: 32, fontWeight: 700 }}>{stats?.totals?.families || 0}</p>
             </div>
 
             <div className="card" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white', border: 'none' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🙋</div>
+              <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><UserCheck size={40} color="rgba(255,255,255,0.9)" /></div>
               <p style={{ margin: 0, fontSize: 14, opacity: 0.9 }}>कार्यकर्ते / Workers</p>
               <p style={{ margin: '8px 0 0', fontSize: 32, fontWeight: 700 }}>{stats?.totals?.workers || 0}</p>
             </div>
 
             <div className="card" style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white', border: 'none' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>💼</div>
+              <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Briefcase size={40} color="rgba(255,255,255,0.9)" /></div>
               <p style={{ margin: 0, fontSize: 14, opacity: 0.9 }}>कर्मचारी / Employees</p>
               <p style={{ margin: '8px 0 0', fontSize: 32, fontWeight: 700 }}>{stats?.totals?.employees || 0}</p>
             </div>
@@ -248,7 +253,7 @@ export default function ReportsPage() {
                       fontWeight: 500,
                       color: status === 'Active' ? '#065f46' : '#991b1b'
                     }}>
-                      {status === 'Active' ? '✅' : '⚠️'} {status}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>{status === 'Active' ? <CheckCircle size={14} /> : <AlertTriangle size={14} />} {status}</span>
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{
@@ -274,8 +279,8 @@ export default function ReportsPage() {
               <div style={{ display: 'grid', gap: 12 }}>
                 {stats?.gender && Object.entries(stats.gender).map(([gender, count]: [string, any]) => {
                   let genderLabel = gender;
-                  if (gender === 'M') genderLabel = '👨 पुरुष / Male';
-                  else if (gender === 'F') genderLabel = '👩 स्त्री / Female';
+                  if (gender === 'M') genderLabel = 'पुरुष / Male';
+                  else if (gender === 'F') genderLabel = 'स्त्री / Female';
                   
                   return (
                     <div key={gender} style={{ 
@@ -308,7 +313,7 @@ export default function ReportsPage() {
               {stats?.gender && (
                 <div style={{ marginTop: 16, padding: 12, background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
                   <p style={{ margin: 0, fontSize: 13, color: '#166534' }}>
-                    📊 Female Ratio: {((stats.gender.F / (stats.totals.voters || 1)) * 100).toFixed(1)}%
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><BarChart3 size={14} /> Female Ratio: {((stats.gender.F / (stats.totals.voters || 1)) * 100).toFixed(1)}%</span>
                   </p>
                 </div>
               )}
@@ -369,7 +374,7 @@ export default function ReportsPage() {
                       border: '1px solid #e2e8f0'
                     }}>
                       <span style={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>
-                        📍 {village}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={13} /> {village}</span>
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{
@@ -419,7 +424,7 @@ export default function ReportsPage() {
                       return (
                         <tr key={booth} style={{ borderBottom: '1px solid #f1f5f9' }}>
                           <td style={{ padding: '12px 16px', fontSize: 15, fontWeight: 600, color: '#0f172a' }}>
-                            🗳️ {booth}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><VoteIcon size={13} /> {booth}</span>
                           </td>
                           <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
                             {count}
@@ -454,7 +459,7 @@ export default function ReportsPage() {
           {/* Export Actions */}
           <div className="card" style={{ marginTop: 24, background: '#f8fafc', textAlign: 'center' }}>
             <p style={{ margin: '0 0 16px', fontSize: 14, color: '#64748b' }}>
-              📥 Download detailed reports (CSV format with bilingual headers)
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Download size={14} /> Download detailed reports (CSV format with bilingual headers)</span>
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button 
@@ -463,7 +468,7 @@ export default function ReportsPage() {
                 className="btn-secondary"
                 style={{ opacity: exporting === 'booth' ? 0.6 : 1 }}
               >
-                {exporting === 'booth' ? '⏳ Exporting...' : '📥 Download Booth Report (CSV)'}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{exporting === 'booth' ? 'Exporting...' : <><Download size={14} /> Download Booth Report (CSV)</>}</span>
               </button>
               <button 
                 onClick={() => exportReport('village')} 
@@ -471,7 +476,7 @@ export default function ReportsPage() {
                 className="btn-secondary"
                 style={{ opacity: exporting === 'village' ? 0.6 : 1 }}
               >
-                {exporting === 'village' ? '⏳ Exporting...' : '📥 Download Village Report (CSV)'}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{exporting === 'village' ? 'Exporting...' : <><Download size={14} /> Download Village Report (CSV)</>}</span>
               </button>
               <button 
                 onClick={() => exportReport('status')} 
@@ -479,7 +484,7 @@ export default function ReportsPage() {
                 className="btn-secondary"
                 style={{ opacity: exporting === 'status' ? 0.6 : 1 }}
               >
-                {exporting === 'status' ? '⏳ Exporting...' : '📥 Download Status Report (CSV)'}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{exporting === 'status' ? 'Exporting...' : <><Download size={14} /> Download Status Report (CSV)</>}</span>
               </button>
             </div>
           </div>
@@ -487,15 +492,15 @@ export default function ReportsPage() {
           {/* Worker Performance Section */}
           <div className="card" style={{ marginTop: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
-                🙋 कार्यकर्ता कामगिरी / Worker Performance Metrics
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <UserCheck size={18} /> कार्यकर्ता कामगिरी / Worker Performance Metrics
               </h3>
               <button
                 onClick={toggleWorkerPerformance}
                 className="btn-primary"
                 style={{ padding: '8px 16px', fontSize: 14 }}
               >
-                {showWorkerPerformance ? '🔼 Hide' : '🔽 Show Worker Performance'}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{showWorkerPerformance ? <><ChevronUp size={14} /> Hide</> : <><ChevronDown size={14} /> Show Worker Performance</>}</span>
               </button>
             </div>
 
@@ -512,7 +517,7 @@ export default function ReportsPage() {
                     <div style={{ marginBottom: 16 }}>
                       <input
                         type="text"
-                        placeholder="🔍 Search worker by name..."
+                        placeholder="Search worker by name..."
                         value={workerSearch}
                         onChange={(e) => setWorkerSearch(e.target.value)}
                         className="input"
@@ -563,7 +568,7 @@ export default function ReportsPage() {
                                     </div>
                                     {worker.mobile && (
                                       <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-                                        📱 {worker.mobile}
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Smartphone size={12} /> {worker.mobile}</span>
                                       </div>
                                     )}
                                   </td>

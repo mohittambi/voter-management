@@ -4,6 +4,10 @@ import DashboardLayout from '../../components/DashboardLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { AVAILABLE_FIELDS, OPERATORS, ReportConfig, ReportFilter, convertToCSV } from '../../lib/reportBuilder';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  ClipboardList, Search, ArrowUpDown, Eye, Wrench, Download, Save, FolderOpen,
+  Trash2, Plus, X, Loader,
+} from 'lucide-react';
 
 type Step = 'fields' | 'filters' | 'sort' | 'preview';
 
@@ -211,10 +215,10 @@ export default function ReportBuilder() {
   }
 
   const steps = [
-    { id: 'fields', label: 'Select Fields', icon: '📋' },
-    { id: 'filters', label: 'Add Filters', icon: '🔍' },
-    { id: 'sort', label: 'Sort & Limit', icon: '🔢' },
-    { id: 'preview', label: 'Preview & Export', icon: '👁️' },
+    { id: 'fields', label: 'Select Fields', icon: <ClipboardList size={16} /> },
+    { id: 'filters', label: 'Add Filters', icon: <Search size={16} /> },
+    { id: 'sort', label: 'Sort & Limit', icon: <ArrowUpDown size={16} /> },
+    { id: 'preview', label: 'Preview & Export', icon: <Eye size={16} /> },
   ];
 
   return (
@@ -222,8 +226,8 @@ export default function ReportBuilder() {
       <DashboardLayout>
         <div>
           <div style={{ marginBottom: 32 }}>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#0f172a' }}>
-              🔧 Custom Report Builder
+            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Wrench size={28} /> Custom Report Builder
             </h1>
             <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: 14 }}>
               Create custom reports with your own fields, filters, and sorting
@@ -253,7 +257,7 @@ export default function ReportBuilder() {
                       transition: 'all 0.2s',
                     }}
                   >
-                    <span style={{ fontSize: 18, marginRight: 8 }}>{step.icon}</span>
+                    <span style={{ marginRight: 8, display: 'inline-flex', alignItems: 'center' }}>{step.icon}</span>
                     {step.label}
                   </button>
                 );
@@ -264,8 +268,8 @@ export default function ReportBuilder() {
           {/* Step 1: Select Fields */}
           {currentStep === 'fields' && (
             <div className="card">
-              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
-                📋 Step 1: Select Fields to Include
+              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ClipboardList size={18} /> Step 1: Select Fields to Include
               </h3>
               
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
@@ -353,8 +357,8 @@ export default function ReportBuilder() {
           {/* Step 2: Add Filters */}
           {currentStep === 'filters' && (
             <div className="card">
-              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
-                🔍 Step 2: Add Filters (Optional)
+              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Search size={18} /> Step 2: Add Filters (Optional)
               </h3>
 
               {config.filters.map((filter, idx) => (
@@ -400,11 +404,11 @@ export default function ReportBuilder() {
 
                     <button
                       onClick={() => removeFilter(idx)}
-                      className="btn-secondary"
-                      style={{ padding: '10px 16px', background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b' }}
-                    >
-                      ❌
-                    </button>
+                    className="btn-secondary"
+                    style={{ padding: '10px 16px', background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', display: 'inline-flex', alignItems: 'center' }}
+                  >
+                    <X size={14} />
+                  </button>
                   </div>
                 </div>
               ))}
@@ -412,9 +416,9 @@ export default function ReportBuilder() {
               <button
                 onClick={addFilter}
                 className="btn-secondary"
-                style={{ width: '100%', padding: '12px', marginBottom: 16 }}
+                style={{ width: '100%', padding: '12px', marginBottom: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
               >
-                ➕ Add Filter
+                <Plus size={14} /> Add Filter
               </button>
 
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
@@ -431,8 +435,8 @@ export default function ReportBuilder() {
           {/* Step 3: Sort & Limit */}
           {currentStep === 'sort' && (
             <div className="card">
-              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
-                🔢 Step 3: Configure Sort & Limit
+              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ArrowUpDown size={18} /> Step 3: Configure Sort & Limit
               </h3>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, marginBottom: 24 }}>
@@ -491,7 +495,7 @@ export default function ReportBuilder() {
                   ← Back
                 </button>
                 <button onClick={generatePreview} disabled={loading} className="btn-primary">
-                  {loading ? '⏳ Generating...' : 'Generate Preview →'}
+                  {loading ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Loader size={14} /> Generating...</span> : 'Generate Preview →'}
                 </button>
               </div>
             </div>
@@ -500,8 +504,8 @@ export default function ReportBuilder() {
           {/* Step 4: Preview & Export */}
           {currentStep === 'preview' && (
             <div className="card">
-              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
-                👁️ Step 4: Preview & Export
+              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Eye size={18} /> Step 4: Preview & Export
               </h3>
 
               <div style={{ marginBottom: 20, padding: 16, background: '#f0f9ff', borderRadius: 8, border: '1px solid #bae6fd' }}>
@@ -545,11 +549,11 @@ export default function ReportBuilder() {
                 <button onClick={() => setCurrentStep('sort')} className="btn-secondary">
                   ← Back
                 </button>
-                <button onClick={exportToCSV} disabled={previewData.length === 0} className="btn-secondary">
-                  📥 Export to CSV
+                <button onClick={exportToCSV} disabled={previewData.length === 0} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Download size={14} /> Export to CSV
                 </button>
-                <button onClick={() => setShowSaveDialog(true)} className="btn-primary">
-                  💾 Save Report
+                <button onClick={() => setShowSaveDialog(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Save size={14} /> Save Report
                 </button>
               </div>
             </div>
@@ -558,8 +562,8 @@ export default function ReportBuilder() {
           {/* Saved Reports Section */}
           {savedReports.length > 0 && (
             <div className="card" style={{ marginTop: 24 }}>
-              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
-                📚 Your Saved Reports
+              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FolderOpen size={18} /> Your Saved Reports
               </h3>
               <div style={{ display: 'grid', gap: 12 }}>
                 {savedReports.map(report => (
@@ -578,11 +582,11 @@ export default function ReportBuilder() {
                         </p>
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={() => loadReport(report.id)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 13 }}>
-                          📂 Load
+                        <button onClick={() => loadReport(report.id)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <FolderOpen size={13} /> Load
                         </button>
-                        <button onClick={() => deleteReport(report.id)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 13, background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b' }}>
-                          🗑️
+                        <button onClick={() => deleteReport(report.id)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 13, background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', display: 'inline-flex', alignItems: 'center' }}>
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </div>
@@ -607,8 +611,8 @@ export default function ReportBuilder() {
               zIndex: 1000
             }}>
               <div className="card" style={{ maxWidth: 500, width: '90%' }}>
-                <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
-                  💾 Save Custom Report
+                <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Save size={18} /> Save Custom Report
                 </h3>
                 <div style={{ marginBottom: 16 }}>
                   <label className="label">Report Name *</label>
@@ -635,7 +639,7 @@ export default function ReportBuilder() {
                     Cancel
                   </button>
                   <button onClick={saveReport} disabled={loading || !reportName} className="btn-primary">
-                    {loading ? '⏳ Saving...' : '💾 Save Report'}
+                    {loading ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Loader size={14} /> Saving...</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={14} /> Save Report</span>}
                   </button>
                 </div>
               </div>

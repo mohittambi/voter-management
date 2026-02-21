@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
+import { SlidersHorizontal, Search, Loader2, MapPin, CheckCircle, AlertTriangle, Smartphone } from 'lucide-react';
 
 export default function SearchPage() {
   const [q, setQ] = useState('');
@@ -75,7 +76,7 @@ export default function SearchPage() {
               transition: 'all 0.2s'
             }}
           >
-            🔽 Filter
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><SlidersHorizontal size={14} /> Filter</span>
           </button>
           <button
             onClick={doSearch}
@@ -92,7 +93,7 @@ export default function SearchPage() {
               opacity: searching ? 0.6 : 1
             }}
           >
-            {searching ? '⏳ शोधत आहे...' : '🔍 शोधा / Search'}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{searching ? <><Loader2 size={14} /> शोधत आहे...</> : <><Search size={14} /> शोधा / Search</>}</span>
           </button>
         </div>
 
@@ -254,7 +255,7 @@ export default function SearchPage() {
                           color: '#1e40af',
                           borderRadius: 4
                         }}>
-                          📍 {r.village}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {r.village}</span>
                         </span>
                       )}
                       {r.status && (
@@ -265,7 +266,7 @@ export default function SearchPage() {
                           color: r.status === 'Active' ? '#065f46' : '#991b1b',
                           borderRadius: 4
                         }}>
-                          {r.status === 'Active' ? '✅ Active' : `⚠️ ${r.status}`}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>{r.status === 'Active' ? <><CheckCircle size={12} /> Active</> : <><AlertTriangle size={12} /> {r.status}</>}</span>
                         </span>
                       )}
                     </div>
@@ -273,7 +274,7 @@ export default function SearchPage() {
                     {/* Mobile & Address */}
                     {(r.mobile || r.address_marathi) && (
                       <div style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
-                        {r.mobile && <span>📱 {r.mobile}</span>}
+                        {r.mobile && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Smartphone size={13} /> {r.mobile}</span>}
                         {r.mobile && r.address_marathi && <span style={{ margin: '0 8px' }}>•</span>}
                         {r.address_marathi && <span>{r.address_marathi}</span>}
                       </div>
@@ -297,7 +298,7 @@ export default function SearchPage() {
           border: '1px solid #e5e7eb',
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
+          <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Search size={48} color="#94a3b8" /></div>
           <p style={{ margin: 0, color: '#6b7280' }}>
             कोणतेही मतदार सापडले नाहीत / No voters found matching your search
           </p>

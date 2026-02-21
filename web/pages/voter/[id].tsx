@@ -3,6 +3,11 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import DashboardLayout from '../../components/DashboardLayout';
 import FamilyLinkModal from '../../src/components/FamilyLinkModal';
+import {
+  User, Smartphone, ClipboardList, Home, HardHat, CreditCard, Vote as VoteIcon,
+  CheckCircle, AlertTriangle, Pencil, Save, Link2, Plus, Crown, Users, UserCheck,
+  Briefcase, MapPin, XCircle, Phone,
+} from 'lucide-react';
 
 type TabType = 'personal' | 'contact' | 'administrative' | 'family' | 'assignment';
 
@@ -86,7 +91,7 @@ export default function VoterProfile() {
     return (
       <DashboardLayout>
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><XCircle size={48} color="#ef4444" /></div>
           <p style={{ margin: 0, color: '#64748b' }}>Voter not found</p>
         </div>
       </DashboardLayout>
@@ -94,11 +99,11 @@ export default function VoterProfile() {
   }
 
   const tabs = [
-    { id: 'personal', label: 'वैयक्तिक माहिती / Personal', icon: '👤' },
-    { id: 'contact', label: 'संपर्क / Contact', icon: '📱' },
-    { id: 'administrative', label: 'प्रशासकीय / Administrative', icon: '📋' },
-    { id: 'family', label: 'कुटुंब / Family', icon: '👨‍👩‍👧‍👦' },
-    { id: 'assignment', label: 'नियुक्ती / Assignment', icon: '👷' },
+    { id: 'personal', label: 'वैयक्तिक माहिती / Personal', icon: <User size={17} /> },
+    { id: 'contact', label: 'संपर्क / Contact', icon: <Smartphone size={17} /> },
+    { id: 'administrative', label: 'प्रशासकीय / Administrative', icon: <ClipboardList size={17} /> },
+    { id: 'family', label: 'कुटुंब / Family', icon: <Home size={17} /> },
+    { id: 'assignment', label: 'नियुक्ती / Assignment', icon: <HardHat size={17} /> },
   ];
 
   return (
@@ -143,12 +148,12 @@ export default function VoterProfile() {
               </p>
             )}
             <div style={{ margin: '12px 0 0', display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span className="badge badge-info" style={{ fontSize: 14, padding: '6px 12px' }}>
-                🆔 {voter.voter_id}
+              <span className="badge badge-info" style={{ fontSize: 14, padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <CreditCard size={13} /> {voter.voter_id}
               </span>
               {voter.booth_number && (
-                <span className="badge" style={{ background: '#dbeafe', color: '#1e40af', fontSize: 13 }}>
-                  🗳️ Booth {voter.booth_number}
+                <span className="badge" style={{ background: '#dbeafe', color: '#1e40af', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <VoteIcon size={12} /> Booth {voter.booth_number}
                 </span>
               )}
               {voter.age && (
@@ -158,12 +163,12 @@ export default function VoterProfile() {
               )}
               {voter.gender && (
                 <span className="badge" style={{ background: '#fef3c7', color: '#92400e', fontSize: 13 }}>
-                  {voter.gender === 'M' ? '👨 Male' : voter.gender === 'F' ? '👩 Female' : voter.gender}
+                  {voter.gender === 'M' ? 'Male' : voter.gender === 'F' ? 'Female' : voter.gender}
                 </span>
               )}
               {profile?.status && (
-                <span className={`badge ${profile.status === 'Active' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: 13 }}>
-                  {profile.status === 'Active' ? '✅ Active' : `⚠️ ${profile.status}`}
+                <span className={`badge ${profile.status === 'Active' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {profile.status === 'Active' ? <><CheckCircle size={12} /> Active</> : <><AlertTriangle size={12} /> {profile.status}</>}
                 </span>
               )}
             </div>
@@ -172,8 +177,8 @@ export default function VoterProfile() {
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: 12 }}>
             {!editing && activeTab !== 'family' && (
-              <button onClick={() => setEditing(true)} className="btn-primary">
-                ✏️ Edit
+              <button onClick={() => setEditing(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Pencil size={14} /> Edit
               </button>
             )}
           </div>
@@ -212,7 +217,7 @@ export default function VoterProfile() {
                 gap: 8
               }}
             >
-              <span style={{ fontSize: 18 }}>{tab.icon}</span>
+              <span style={{ display: 'flex', alignItems: 'center' }}>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}
@@ -224,8 +229,8 @@ export default function VoterProfile() {
         {/* Personal Info Tab */}
         {activeTab === 'personal' && (
           <div>
-            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a' }}>
-              👤 वैयक्तिक माहिती / Personal Information
+            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <User size={20} /> वैयक्तिक माहिती / Personal Information
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
               <div>
@@ -284,12 +289,12 @@ export default function VoterProfile() {
         {activeTab === 'contact' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a' }}>
-                📱 संपर्क माहिती / Contact Information
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Smartphone size={20} /> संपर्क माहिती / Contact Information
               </h2>
               {!editing && (
-                <button onClick={() => setEditing(true)} className="btn-secondary">
-                  ✏️ Edit Contact
+                <button onClick={() => setEditing(true)} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Pencil size={14} /> Edit Contact
                 </button>
               )}
             </div>
@@ -324,10 +329,10 @@ export default function VoterProfile() {
                   <label className="label">Social Media</label>
                   <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
                     {profile?.social_ids?.facebook && (
-                      <span className="badge badge-info">📘 {profile.social_ids.facebook}</span>
+                      <span className="badge badge-info">fb: {profile.social_ids.facebook}</span>
                     )}
                     {profile?.social_ids?.instagram && (
-                      <span className="badge badge-info">📷 {profile.social_ids.instagram}</span>
+                      <span className="badge badge-info">ig: {profile.social_ids.instagram}</span>
                     )}
                     {!profile?.social_ids?.facebook && !profile?.social_ids?.instagram && <span style={{ color: '#64748b' }}>—</span>}
                   </div>
@@ -365,8 +370,8 @@ export default function VoterProfile() {
                   <button type="button" onClick={() => setEditing(false)} className="btn-secondary">
                     Cancel
                   </button>
-                  <button type="submit" className="btn-primary">
-                    💾 Save Changes
+                  <button type="submit" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Save size={14} /> Save Changes
                   </button>
                 </div>
               </form>
@@ -377,8 +382,8 @@ export default function VoterProfile() {
         {/* Administrative Tab */}
         {activeTab === 'administrative' && (
           <div>
-            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a' }}>
-              📋 प्रशासकीय माहिती / Administrative Information
+            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ClipboardList size={20} /> प्रशासकीय माहिती / Administrative Information
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
               <div>
@@ -402,8 +407,8 @@ export default function VoterProfile() {
               <div>
                 <label className="label">स्थिती / Status</label>
                 <p style={{ margin: '4px 0 0' }}>
-                  <span className={`badge ${profile?.status === 'Active' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: 14 }}>
-                    {profile?.status === 'Active' ? '✅ Active' : profile?.status || '—'}
+                  <span className={`badge ${profile?.status === 'Active' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {profile?.status === 'Active' ? <><CheckCircle size={12} /> Active</> : profile?.status || '—'}
                   </span>
                 </p>
               </div>
@@ -438,11 +443,11 @@ export default function VoterProfile() {
         {activeTab === 'family' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a' }}>
-                👨‍👩‍👧‍👦 कुटुंब माहिती / Family Information
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Home size={20} /> कुटुंब माहिती / Family Information
               </h2>
-              <button onClick={() => setShowLinkModal(true)} className="btn-primary">
-                ➕ Link Family Member
+              <button onClick={() => setShowLinkModal(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Plus size={14} /> Link Family Member
               </button>
             </div>
 
@@ -455,8 +460,8 @@ export default function VoterProfile() {
                   border: '1px solid #90CAF9',
                   marginBottom: 20 
                 }}>
-                  <p style={{ margin: 0, color: '#0D47A1', fontWeight: 600, fontSize: 14 }}>
-                    👑 कुटुंब प्रमुख / Family Head
+                  <p style={{ margin: 0, color: '#0D47A1', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Crown size={14} /> कुटुंब प्रमुख / Family Head
                   </p>
                 </div>
 
@@ -496,7 +501,7 @@ export default function VoterProfile() {
                   </div>
                 ) : (
                   <div style={{ textAlign: 'center', padding: 32, background: '#F5F7FA', borderRadius: 8 }}>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>👥</div>
+                    <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Users size={32} color="#94a3b8" /></div>
                     <p style={{ margin: 0, color: '#64748b', fontSize: 14 }}>No family members linked yet</p>
                   </div>
                 )}
@@ -523,8 +528,8 @@ export default function VoterProfile() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
-                        👑 {familyInfo.head.name}
+                      <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Crown size={14} /> {familyInfo.head.name}
                       </p>
                     </div>
                     <div style={{ color: '#0D47A1', fontSize: 20 }}>→</div>
@@ -571,13 +576,13 @@ export default function VoterProfile() {
 
             {familyInfo?.role === 'none' && (
               <div style={{ textAlign: 'center', padding: 48, background: '#F5F7FA', borderRadius: 8 }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>👥</div>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><Users size={48} color="#94a3b8" /></div>
                 <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 600 }}>कुटुंब जोडलेले नाही / No Family Linked</h3>
                 <p style={{ margin: '0 0 24px', color: '#64748b', fontSize: 14 }}>
                   Link this voter to a family or mark as family head
                 </p>
-                <button onClick={() => setShowLinkModal(true)} className="btn-primary">
-                  ➕ Link Family Member
+                <button onClick={() => setShowLinkModal(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Plus size={14} /> Link Family Member
                 </button>
               </div>
             )}
@@ -587,14 +592,14 @@ export default function VoterProfile() {
         {/* Assignment Tab */}
         {activeTab === 'assignment' && (
           <div>
-            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a' }}>
-              👷 नियुक्ती माहिती / Assignment Information
+            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <HardHat size={20} /> नियुक्ती माहिती / Assignment Information
             </h2>
             <div style={{ display: 'grid', gap: 24 }}>
               {/* Worker Info */}
               <div className="card" style={{ background: '#E0F2F1', border: '1px solid #80CBC4' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#00695C' }}>
-                  🙋 कार्यकर्ता / Karyakarta (Worker)
+                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#00695C', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <UserCheck size={16} /> कार्यकर्ता / Karyakarta (Worker)
                 </h3>
                 {profile?.workers ? (
                   <div style={{ display: 'grid', gap: 12 }}>
@@ -607,8 +612,8 @@ export default function VoterProfile() {
                     {profile.workers.mobile && (
                       <div>
                         <label className="label">मोबाइल नं / Mobile</label>
-                        <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
-                          📱 {profile.workers.mobile}
+                        <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Phone size={14} /> {profile.workers.mobile}
                         </p>
                       </div>
                     )}
@@ -628,8 +633,8 @@ export default function VoterProfile() {
 
               {/* Employee Info */}
               <div className="card" style={{ background: '#E3F0FF', border: '1px solid #90CAF9' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#0D47A1' }}>
-                  💼 कर्मचारी / Employee
+                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#0D47A1', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Briefcase size={16} /> कर्मचारी / Employee
                 </h3>
                 {profile?.employees ? (
                   <div style={{ display: 'grid', gap: 12 }}>
@@ -641,8 +646,8 @@ export default function VoterProfile() {
                     </div>
                     <div>
                       <label className="label">कर्मचारी आय डी / Employee ID</label>
-                      <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
-                        🆔 {profile.employees.employee_id}
+                        <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <CreditCard size={14} /> {profile.employees.employee_id}
                       </p>
                     </div>
                   </div>
@@ -653,8 +658,8 @@ export default function VoterProfile() {
 
               {/* Village Info */}
               <div className="card" style={{ background: '#E8F5E9', border: '1px solid #A5D6A7' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#1B5E20' }}>
-                  📍 स्थान माहिती / Location Information
+                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#1B5E20', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <MapPin size={16} /> स्थान माहिती / Location Information
                 </h3>
                 <div style={{ display: 'grid', gap: 12 }}>
                   <div>

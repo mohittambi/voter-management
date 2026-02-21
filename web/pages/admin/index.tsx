@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import DashboardLayout from '../../components/DashboardLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { colors } from '../../lib/colors';
+import {
+  Plus, Crown, User, Check, Ban, Pencil, Trash2, X, Download, FileText,
+  TrendingUp, Wrench, Users, BarChart3, FileDown, Settings2, CheckCircle,
+  Loader,
+} from 'lucide-react';
 
 type AdminTab = 'users' | 'reports' | 'export' | 'services';
 
@@ -46,8 +51,8 @@ function UsersTab() {
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>User Management</h3>
           <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>वापरकर्ता व्यवस्थापन</div>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="btn-primary" style={{ padding: '9px 18px', fontSize: 14 }}>
-          ➕ Add User / वापरकर्ता जोडा
+        <button onClick={() => setShowAddModal(true)} className="btn-primary" style={{ padding: '9px 18px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Plus size={14} /> Add User / वापरकर्ता जोडा
         </button>
       </div>
 
@@ -79,8 +84,8 @@ function UsersTab() {
                       disabled={updating === u.id}
                       style={{ padding: '5px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, background: 'white', cursor: 'pointer' }}
                     >
-                      <option value="admin">👑 Admin</option>
-                      <option value="office_user">👤 Office User</option>
+                      <option value="admin">Admin</option>
+                      <option value="office_user">Office User</option>
                     </select>
                   </td>
                   <td style={tdStyle}>
@@ -89,7 +94,7 @@ function UsersTab() {
                       background: u.active ? '#d1fae5' : '#fee2e2',
                       color: u.active ? '#065f46' : '#991b1b',
                     }}>
-                      {u.active ? '✓ Active' : '✗ Inactive'}
+                      {u.active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td style={{ ...tdStyle, fontSize: 12, color: '#64748b' }}>
@@ -106,7 +111,7 @@ function UsersTab() {
                         color: u.active ? '#991b1b' : '#065f46',
                       }}
                     >
-                      {updating === u.id ? '...' : u.active ? '⊘ Deactivate' : '✓ Activate'}
+                      {updating === u.id ? '...' : u.active ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Ban size={12} /> Deactivate</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Activate</span>}
                     </button>
                   </td>
                 </tr>
@@ -154,7 +159,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
             <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Add New User</h3>
             <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>नवीन वापरकर्ता जोडा</div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
         </div>
         {error && <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#991b1b', fontSize: 13 }}>{error}</div>}
         <form onSubmit={submit}>
@@ -169,14 +174,14 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           <div style={{ marginBottom: 24 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Role / भूमिका *</label>
             <select value={role} onChange={e => setRole(e.target.value)} style={{ width: '100%', padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, background: 'white' }}>
-              <option value="office_user">👤 Office User</option>
-              <option value="admin">👑 Admin</option>
+              <option value="office_user">Office User</option>
+              <option value="admin">Admin</option>
             </select>
           </div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button type="button" onClick={onClose} style={{ padding: '10px 20px', border: '1px solid #d1d5db', borderRadius: 8, background: 'white', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             <button type="submit" disabled={submitting} className="btn-primary">
-              {submitting ? 'Creating...' : '✓ Create User'}
+              {submitting ? 'Creating...' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={14} /> Create User</span>}
             </button>
           </div>
         </form>
@@ -222,8 +227,8 @@ function ServicesTab() {
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Service Types</h3>
           <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>सेवा प्रकार व्यवस्थापन</div>
         </div>
-        <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary" style={{ padding: '9px 18px', fontSize: 14 }}>
-          ➕ Add Service / सेवा जोडा
+        <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary" style={{ padding: '9px 18px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Plus size={14} /> Add Service / सेवा जोडा
         </button>
       </div>
 
@@ -246,14 +251,14 @@ function ServicesTab() {
               {s.description && <div style={{ fontSize: 13, color: '#64748b' }}>{s.description}</div>}
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-              <button onClick={() => { setEditing(s); setShowModal(true); }} style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
-                ✏️ Edit
+              <button onClick={() => { setEditing(s); setShowModal(true); }} style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Pencil size={12} /> Edit
               </button>
-              <button onClick={() => toggleActive(s)} style={{ padding: '6px 12px', border: `1px solid ${s.active ? '#fecaca' : '#bbf7d0'}`, borderRadius: 6, background: s.active ? '#fee2e2' : '#d1fae5', color: s.active ? '#991b1b' : '#065f46', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
-                {s.active ? '⊘ Deactivate' : '✓ Activate'}
+              <button onClick={() => toggleActive(s)} style={{ padding: '6px 12px', border: `1px solid ${s.active ? '#fecaca' : '#bbf7d0'}`, borderRadius: 6, background: s.active ? '#fee2e2' : '#d1fae5', color: s.active ? '#991b1b' : '#065f46', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {s.active ? <><Ban size={12} /> Deactivate</> : <><Check size={12} /> Activate</>}
               </button>
-              <button onClick={() => deleteService(s.id)} style={{ padding: '6px 12px', border: '1px solid #fecaca', borderRadius: 6, background: '#fee2e2', color: '#991b1b', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
-                🗑
+              <button onClick={() => deleteService(s.id)} style={{ padding: '6px 12px', border: '1px solid #fecaca', borderRadius: 6, background: '#fee2e2', color: '#991b1b', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Trash2 size={12} />
               </button>
             </div>
           </div>
@@ -296,7 +301,7 @@ function ServiceModal({ service, onClose, onSaved }: { service: any; onClose: ()
       <div style={{ position: 'relative', background: 'white', borderRadius: 16, padding: 28, width: 400, maxWidth: '95vw', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>{service ? 'Edit Service' : 'Add Service Type'}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
         </div>
         {error && <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#991b1b', fontSize: 13 }}>{error}</div>}
         <form onSubmit={submit}>
@@ -315,7 +320,7 @@ function ServiceModal({ service, onClose, onSaved }: { service: any; onClose: ()
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button type="button" onClick={onClose} style={{ padding: '10px 20px', border: '1px solid #d1d5db', borderRadius: 8, background: 'white', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             <button type="submit" disabled={submitting} className="btn-primary">
-              {submitting ? 'Saving...' : service ? '✓ Update' : '✓ Create'}
+              {submitting ? 'Saving...' : service ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={14} /> Update</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={14} /> Create</span>}
             </button>
           </div>
         </form>
@@ -364,14 +369,14 @@ function ExportTab() {
             padding: '12px 24px', border: `1px solid #90CAF9`, borderRadius: 10, background: colors.primaryLight,
             color: colors.primary, fontSize: 14, fontWeight: 700, cursor: downloading === 'voters' ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
           }}>
-            {downloading === 'voters' ? '⏳ Exporting...' : '📥 Export Voters (CSV)'}
+            {downloading === 'voters' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Loader size={14} /> Exporting...</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Download size={14} /> Export Voters (CSV)</span>}
             <div style={{ fontSize: 12, fontWeight: 400, marginTop: 2 }}>मतदार डेटा निर्यात करा</div>
           </button>
           <button onClick={() => exportData('service_requests')} disabled={downloading === 'service_requests'} style={{
             padding: '12px 24px', border: `1px solid #80CBC4`, borderRadius: 10, background: colors.accentLight,
             color: colors.accent, fontSize: 14, fontWeight: 700, cursor: downloading === 'service_requests' ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
           }}>
-            {downloading === 'service_requests' ? '⏳ Exporting...' : '📥 Export Service Requests (CSV)'}
+            {downloading === 'service_requests' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Loader size={14} /> Exporting...</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Download size={14} /> Export Service Requests (CSV)</span>}
             <div style={{ fontSize: 12, fontWeight: 400, marginTop: 2 }}>सेवा विनंत्या निर्यात करा</div>
           </button>
         </div>
@@ -399,7 +404,7 @@ function ExportTab() {
                 {imports.map((imp, i) => (
                   <tr key={imp.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
                     <td style={{ padding: '11px 14px', fontSize: 13 }}>
-                      <span style={{ fontWeight: 600 }}>📄 {imp.filename}</span>
+                      <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}><FileText size={13} /> {imp.filename}</span>
                     </td>
                     <td style={{ padding: '11px 14px', fontSize: 13, fontWeight: 700, color: colors.primary }}>
                       {imp.record_count?.toLocaleString('en-IN') || 0}
@@ -430,14 +435,14 @@ function ReportsTab() {
           padding: '14px 24px', border: `1px solid #90CAF9`, borderRadius: 10, background: colors.primaryLight,
           color: colors.primary, fontSize: 14, fontWeight: 700, cursor: 'pointer',
         }}>
-          📈 Reports & Charts
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><TrendingUp size={16} /> Reports & Charts</span>
           <div style={{ fontSize: 12, fontWeight: 400, marginTop: 2 }}>Booth, village, status, age</div>
         </button>
         <button onClick={() => router.push('/reports/builder')} style={{
           padding: '14px 24px', border: `1px solid #80CBC4`, borderRadius: 10, background: colors.accentLight,
           color: colors.accent, fontSize: 14, fontWeight: 700, cursor: 'pointer',
         }}>
-          🔧 Custom Report Builder
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Wrench size={16} /> Custom Report Builder</span>
           <div style={{ fontSize: 12, fontWeight: 400, marginTop: 2 }}>Build and save custom reports</div>
         </button>
       </div>
@@ -446,11 +451,11 @@ function ReportsTab() {
 }
 
 // ==================== MAIN ADMIN PAGE ====================
-const TABS: { id: AdminTab; label: string; labelMr: string; icon: string }[] = [
-  { id: 'users', label: 'Users', labelMr: 'वापरकर्ते', icon: '👤' },
-  { id: 'reports', label: 'Reports', labelMr: 'अहवाल', icon: '📈' },
-  { id: 'export', label: 'Export', labelMr: 'निर्यात', icon: '📥' },
-  { id: 'services', label: 'Services', labelMr: 'सेवा', icon: '🛠️' },
+const TABS: { id: AdminTab; label: string; labelMr: string; icon: React.ReactNode }[] = [
+  { id: 'users', label: 'Users', labelMr: 'वापरकर्ते', icon: <Users size={15} /> },
+  { id: 'reports', label: 'Reports', labelMr: 'अहवाल', icon: <BarChart3 size={15} /> },
+  { id: 'export', label: 'Export', labelMr: 'निर्यात', icon: <FileDown size={15} /> },
+  { id: 'services', label: 'Services', labelMr: 'सेवा', icon: <Settings2 size={15} /> },
 ];
 
 export default function AdminPage() {
