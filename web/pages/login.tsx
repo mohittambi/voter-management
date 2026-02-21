@@ -31,7 +31,7 @@ export default function LoginPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      background: 'linear-gradient(160deg, #0D47A1 0%, #1565C0 50%, #00796B 100%)'
     }}>
       <div style={{
         background: 'white',

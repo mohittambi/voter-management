@@ -1,198 +1,247 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
-import { hasPermission } from '../lib/rbac';
+import { colors } from '../lib/colors';
+
+const NAV_ITEMS = [
+  { href: '/',                 label: 'Dashboard',        labelMr: 'डॅशबोर्ड',    icon: '📊', adminOnly: false },
+  { href: '/voters',           label: 'Voters',           labelMr: 'मतदार',       icon: '👥', adminOnly: false },
+  { href: '/service-requests', label: 'Service Requests', labelMr: 'सेवा विनंत्या', icon: '📋', adminOnly: false },
+  { href: '/admin',            label: 'Admin',            labelMr: 'प्रशासन',     icon: '⚙️', adminOnly: true },
+];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, role, signOut, isAdmin } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Define all navigation items with permissions
-  const allNavItems = [
-    { href: '/', label: 'Dashboard', icon: '📊', permission: null },
-    { href: '/upload', label: 'Upload Voters', icon: '📤', permission: 'UPLOAD_VOTERS' as const },
-    { href: '/imports', label: 'Import History', icon: '📋', permission: 'UPLOAD_VOTERS' as const },
-    { href: '/search', label: 'Search Voters', icon: '🔍', permission: 'SEARCH_VOTERS' as const },
-    { href: '/reports', label: 'Reports & Analytics', icon: '📈', permission: 'VIEW_REPORTS' as const },
-    { href: '/reports/builder', label: 'Custom Reports', icon: '🔧', permission: 'CREATE_CUSTOM_REPORTS' as const },
-    { href: '/services', label: 'Manage Services', icon: '🛠️', permission: 'MANAGE_SERVICES' as const },
-    { href: '/signup', label: 'Create User', icon: '👤', permission: 'MANAGE_USERS' as const },
-  ];
+  const navItems = NAV_ITEMS.filter(item => !item.adminOnly || isAdmin);
 
-  // Filter nav items based on user permissions
-  const navItems = allNavItems.filter(item => 
-    !item.permission || hasPermission(role, item.permission)
-  );
+  function isActive(href: string) {
+    if (href === '/') return router.pathname === '/';
+    return router.pathname.startsWith(href);
+  }
+
+  const sidebarBg = colors.primary; // #0D47A1 — Congress Blue
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Sidebar */}
+    <div style={{ display: 'flex', minHeight: '100vh', background: colors.pageBg }}>
+
+      {/* ── Sidebar (desktop) ── */}
       <aside style={{
-        width: 280,
-        background: 'linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%)',
-        color: 'white',
+        width: 240,
+        background: sidebarBg,
+        color: colors.textOnPrimary,
         padding: '24px 0',
-        boxShadow: '4px 0 24px rgba(0,0,0,0.12)',
+        boxShadow: '4px 0 20px rgba(0,0,0,0.15)',
         position: 'fixed',
         height: '100vh',
-        overflowY: 'auto'
-      }}>
-        <div style={{ padding: '0 24px', marginBottom: 40 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        overflowY: 'auto',
+        zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
+      }} className="sidebar-desktop">
+
+        {/* Logo */}
+        <div style={{ padding: '0 20px', marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
-              width: 48,
-              height: 48,
-              borderRadius: 12,
+              width: 44, height: 44, borderRadius: 10,
               background: 'rgba(255,255,255,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 24
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 22, flexShrink: 0,
             }}>🗳️</div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: '-0.5px' }}>Voter Portal</h1>
-              <p style={{ margin: '2px 0 0', fontSize: 12, opacity: 0.75, fontWeight: 500 }}>Management System</p>
+              <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>Voter Portal</div>
+              <div style={{ fontSize: 11, opacity: 0.75, marginTop: 2 }}>मतदार व्यवस्थापन</div>
             </div>
           </div>
         </div>
 
-        <nav style={{ padding: '0 12px' }}>
+        {/* Navigation */}
+        <nav style={{ padding: '0 10px', flex: 1 }}>
           {navItems.map(item => {
-            const isActive = router.pathname === item.href;
+            const active = isActive(item.href);
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '14px 16px',
-                  margin: '4px 0',
-                  color: 'white',
-                  textDecoration: 'none',
-                  background: isActive ? 'rgba(255,255,255,0.15)' : 'transparent',
-                  borderRadius: 10,
-                  fontWeight: isActive ? 600 : 500,
-                  fontSize: 14,
-                  transition: 'all 0.2s',
-                  border: isActive ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent'
-                }}
-              >
-                <span style={{ fontSize: 20 }}>{item.icon}</span>
-                <span>{item.label}</span>
+              <Link key={item.href} href={item.href} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 14px',
+                margin: '3px 0',
+                color: colors.textOnPrimary,
+                textDecoration: 'none',
+                background: active ? 'rgba(255,255,255,0.2)' : 'transparent',
+                borderRadius: 10,
+                fontWeight: active ? 700 : 500,
+                fontSize: 14,
+                transition: 'background 0.15s',
+                borderLeft: active ? `3px solid rgba(255,255,255,0.9)` : '3px solid transparent',
+              }}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
+                <span style={{ fontSize: 19, flexShrink: 0 }}>{item.icon}</span>
+                <div>
+                  <div style={{ lineHeight: 1.2 }}>{item.label}</div>
+                  <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.2 }}>{item.labelMr}</div>
+                </div>
               </Link>
             );
           })}
         </nav>
 
-        <div style={{
-          position: 'absolute',
-          bottom: 24,
-          left: 24,
-          right: 24,
-          padding: 16,
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: 12,
-          border: '1px solid rgba(255,255,255,0.15)'
-        }}>
-          <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 4 }}>Version</div>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>MVP v1.0.0</div>
+        {/* User footer */}
+        <div style={{ padding: '16px 14px 0', borderTop: '1px solid rgba(255,255,255,0.15)', marginTop: 16 }}>
+          <div style={{ fontSize: 11, opacity: 0.65, marginBottom: 4 }}>Logged in as</div>
+          <div style={{ fontSize: 13, fontWeight: 600, wordBreak: 'break-all', marginBottom: 8 }}>{user?.email || 'Guest'}</div>
+          <div style={{ marginBottom: 14 }}>
+            <span style={{
+              padding: '3px 10px',
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 600,
+              border: '1px solid rgba(255,255,255,0.25)',
+            }}>
+              {isAdmin ? '👑 Admin' : '👤 Office User'}
+            </span>
+          </div>
+          {user && (
+            <button onClick={signOut} style={{
+              width: '100%',
+              padding: '9px',
+              background: 'rgba(183,28,28,0.2)',
+              border: '1px solid rgba(183,28,28,0.35)',
+              borderRadius: 8,
+              color: '#FFCDD2',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(183,28,28,0.32)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(183,28,28,0.2)'}>
+              🚪 Logout
+            </button>
+          )}
         </div>
       </aside>
 
-      {/* Main content */}
-      <div style={{ flex: 1, marginLeft: 280 }}>
-        {/* Header */}
+      {/* ── Mobile top bar ── */}
+      <header style={{
+        display: 'none',
+        position: 'fixed',
+        top: 0, left: 0, right: 0,
+        zIndex: 200,
+        background: sidebarBg,
+        color: colors.textOnPrimary,
+        padding: '12px 16px',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+      }} className="mobile-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 22 }}>🗳️</span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Voter Portal</div>
+            <div style={{ fontSize: 11, opacity: 0.75 }}>मतदार व्यवस्थापन</div>
+          </div>
+        </div>
+        <button onClick={() => setMobileMenuOpen(o => !o)} style={{
+          background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8,
+          color: 'white', fontSize: 20, width: 40, height: 40,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
+      </header>
+
+      {/* ── Mobile drawer ── */}
+      {mobileMenuOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 150, display: 'flex' }}>
+          <div onClick={() => setMobileMenuOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+          <div style={{
+            position: 'relative', width: 260,
+            background: sidebarBg,
+            color: colors.textOnPrimary,
+            padding: '80px 10px 24px',
+            display: 'flex', flexDirection: 'column', height: '100%',
+          }}>
+            <nav style={{ flex: 1 }}>
+              {navItems.map(item => {
+                const active = isActive(item.href);
+                return (
+                  <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '13px 14px', margin: '3px 0',
+                    color: colors.textOnPrimary, textDecoration: 'none',
+                    background: active ? 'rgba(255,255,255,0.2)' : 'transparent',
+                    borderRadius: 10, fontWeight: active ? 700 : 500, fontSize: 15,
+                    borderLeft: active ? '3px solid rgba(255,255,255,0.9)' : '3px solid transparent',
+                  }}>
+                    <span style={{ fontSize: 20 }}>{item.icon}</span>
+                    <div>
+                      <div>{item.label}</div>
+                      <div style={{ fontSize: 12, opacity: 0.7 }}>{item.labelMr}</div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </nav>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 12, opacity: 0.65, marginBottom: 4 }}>{user?.email}</div>
+              {user && (
+                <button onClick={() => { signOut(); setMobileMenuOpen(false); }} style={{
+                  width: '100%', padding: '10px',
+                  background: 'rgba(183,28,28,0.2)', border: '1px solid rgba(183,28,28,0.35)',
+                  borderRadius: 8, color: '#FFCDD2', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 8,
+                }}>🚪 Logout</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main content ── */}
+      <div style={{ flex: 1, marginLeft: 240, minWidth: 0 }} className="main-content">
+
+        {/* Page header */}
         <header style={{
-          background: 'white',
-          padding: '20px 32px',
-          borderBottom: '1px solid #e2e8f0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10
+          background: colors.surface,
+          padding: '14px 28px',
+          borderBottom: `1px solid ${colors.borderLight}`,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          position: 'sticky', top: 0, zIndex: 50,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h2 style={{ margin: 0, fontSize: 24, color: '#0f172a', fontWeight: 700, letterSpacing: '-0.5px' }}>
-                {navItems.find(i => i.href === router.pathname)?.label || 'Dashboard'}
+              <h2 style={{ margin: 0, fontSize: 20, color: colors.textPrimary, fontWeight: 700, letterSpacing: '-0.3px' }}>
+                {navItems.find(i => isActive(i.href))?.label || 'Dashboard'}
+                {' '}
+                <span style={{ fontSize: 13, color: colors.textDisabled, fontWeight: 400 }}>
+                  / {navItems.find(i => isActive(i.href))?.labelMr}
+                </span>
               </h2>
-              <p style={{ margin: '4px 0 0', fontSize: 14, color: '#64748b' }}>
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: colors.textDisabled }}>
+                {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
             </div>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              {/* Role Badge */}
-              {role && (
-                <div style={{
-                  padding: '6px 12px',
-                  background: isAdmin ? '#dbeafe' : '#f0fdf4',
-                  borderRadius: 6,
-                  border: isAdmin ? '1px solid #93c5fd' : '1px solid #bbf7d0'
-                }}>
-                  <span style={{ 
-                    fontSize: 12, 
-                    color: isAdmin ? '#1e40af' : '#166534', 
-                    fontWeight: 600 
-                  }}>
-                    {isAdmin ? '👑 Admin' : '👤 Office User'}
-                  </span>
-                </div>
-              )}
-
-              {/* User Info */}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <div style={{
-                padding: '8px 16px',
-                background: '#f8fafc',
-                borderRadius: 8,
-                border: '1px solid #e2e8f0'
+                padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                background: isAdmin ? colors.primaryLight : colors.accentLight,
+                color: isAdmin ? colors.primary : colors.accent,
+                border: `1px solid ${isAdmin ? '#90CAF9' : '#80CBC4'}`,
               }}>
-                <span style={{ fontSize: 13, color: '#64748b', fontWeight: 500 }}>
-                  {user?.email || 'Guest'}
-                </span>
+                {isAdmin ? '👑 Admin' : '👤 Office User'}
               </div>
-
-              {/* Logout Button */}
-              {user && (
-                <button
-                  onClick={signOut}
-                  style={{
-                    padding: '8px 16px',
-                    background: '#fee2e2',
-                    border: '1px solid #fecaca',
-                    borderRadius: 8,
-                    color: '#991b1b',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#fecaca';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = '#fee2e2';
-                  }}
-                >
-                  🚪 Logout
-                </button>
-              )}
-
-              {/* Avatar */}
               <div style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: 16,
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                width: 36, height: 36, borderRadius: 8,
+                background: colors.primary,
+                color: colors.textOnPrimary,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: 15,
               }}>
                 {user?.email?.charAt(0).toUpperCase() || 'G'}
               </div>
@@ -201,27 +250,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Page content */}
-        <main style={{ padding: 32, maxWidth: 1400 }}>
+        <main style={{ padding: '24px 28px', maxWidth: 1400, minHeight: 'calc(100vh - 69px)' }}>
           {children}
         </main>
-
-        {/* Footer */}
-        <footer style={{
-          padding: '24px 32px',
-          borderTop: '1px solid #e2e8f0',
-          background: 'white',
-          marginTop: 'auto'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#64748b' }}>
-            <div>© 2026 Voter Management Portal. All rights reserved.</div>
-            <div style={{ display: 'flex', gap: 24 }}>
-              <a href="#" style={{ color: '#64748b', textDecoration: 'none' }}>Privacy</a>
-              <a href="#" style={{ color: '#64748b', textDecoration: 'none' }}>Terms</a>
-              <a href="#" style={{ color: '#64748b', textDecoration: 'none' }}>Support</a>
-            </div>
-          </div>
-        </footer>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .sidebar-desktop { display: none !important; }
+          .mobile-header   { display: flex !important; }
+          .main-content    { margin-left: 0 !important; padding-top: 64px; }
+        }
+      `}</style>
     </div>
   );
 }

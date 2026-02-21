@@ -105,7 +105,7 @@ export default function VoterProfile() {
     <DashboardLayout>
       {/* Breadcrumb */}
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#64748b' }}>
-        <Link href="/search" style={{ color: '#3b82f6', textDecoration: 'none' }}>शोधा / Search</Link>
+        <Link href="/voters" style={{ color: '#0D47A1', textDecoration: 'none' }}>मतदार / Voters</Link>
         <span>→</span>
         <span style={{ color: '#0f172a', fontWeight: 500 }}>
           {voter.name_marathi || `${voter.first_name || ''} ${voter.surname || ''}`}
@@ -120,14 +120,14 @@ export default function VoterProfile() {
             width: 80,
             height: 80,
             borderRadius: 16,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #0D47A1 0%, #1565C0 100%)',
             color: 'white',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 32,
             fontWeight: 700,
-            boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)'
+            boxShadow: '0 8px 24px rgba(13, 71, 161, 0.3)'
           }}>
             {voter.name_marathi ? voter.name_marathi.charAt(0) : (voter.first_name?.charAt(0) || 'V')}
           </div>
@@ -200,8 +200,8 @@ export default function VoterProfile() {
                 padding: '16px 24px',
                 background: activeTab === tab.id ? 'white' : 'transparent',
                 border: 'none',
-                borderBottom: activeTab === tab.id ? '3px solid #3b82f6' : '3px solid transparent',
-                color: activeTab === tab.id ? '#3b82f6' : '#64748b',
+              borderBottom: activeTab === tab.id ? '3px solid #0D47A1' : '3px solid transparent',
+              color: activeTab === tab.id ? '#0D47A1' : '#424242',
                 fontSize: 14,
                 fontWeight: activeTab === tab.id ? 600 : 500,
                 cursor: 'pointer',
@@ -450,12 +450,12 @@ export default function VoterProfile() {
               <div>
                 <div style={{ 
                   padding: 16, 
-                  background: '#dbeafe', 
+                  background: '#E3F0FF', 
                   borderRadius: 8, 
-                  border: '1px solid #93c5fd',
+                  border: '1px solid #90CAF9',
                   marginBottom: 20 
                 }}>
-                  <p style={{ margin: 0, color: '#1e40af', fontWeight: 600, fontSize: 14 }}>
+                  <p style={{ margin: 0, color: '#0D47A1', fontWeight: 600, fontSize: 14 }}>
                     👑 कुटुंब प्रमुख / Family Head
                   </p>
                 </div>
@@ -489,13 +489,13 @@ export default function VoterProfile() {
                               नाते / Relationship: <span className="badge badge-info">{member.relationship_marathi || member.relationship}</span>
                             </p>
                           </div>
-                          <div style={{ color: '#3b82f6', fontSize: 20 }}>→</div>
+                          <div style={{ color: '#0D47A1', fontSize: 20 }}>→</div>
                         </div>
                       </Link>
                     ))}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: 32, background: '#f8fafc', borderRadius: 8 }}>
+                  <div style={{ textAlign: 'center', padding: 32, background: '#F5F7FA', borderRadius: 8 }}>
                     <div style={{ fontSize: 32, marginBottom: 8 }}>👥</div>
                     <p style={{ margin: 0, color: '#64748b', fontSize: 14 }}>No family members linked yet</p>
                   </div>
@@ -527,7 +527,7 @@ export default function VoterProfile() {
                         👑 {familyInfo.head.name}
                       </p>
                     </div>
-                    <div style={{ color: '#3b82f6', fontSize: 20 }}>→</div>
+                    <div style={{ color: '#0D47A1', fontSize: 20 }}>→</div>
                   </div>
                 </Link>
 
@@ -559,7 +559,7 @@ export default function VoterProfile() {
                                 नाते: <span className="badge badge-info">{sibling.relationship_marathi || sibling.relationship}</span>
                               </p>
                             </div>
-                            <div style={{ color: '#3b82f6', fontSize: 20 }}>→</div>
+                            <div style={{ color: '#0D47A1', fontSize: 20 }}>→</div>
                           </div>
                         </Link>
                       ))}
@@ -570,7 +570,7 @@ export default function VoterProfile() {
             )}
 
             {familyInfo?.role === 'none' && (
-              <div style={{ textAlign: 'center', padding: 48, background: '#f8fafc', borderRadius: 8 }}>
+              <div style={{ textAlign: 'center', padding: 48, background: '#F5F7FA', borderRadius: 8 }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>👥</div>
                 <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 600 }}>कुटुंब जोडलेले नाही / No Family Linked</h3>
                 <p style={{ margin: '0 0 24px', color: '#64748b', fontSize: 14 }}>
@@ -592,8 +592,8 @@ export default function VoterProfile() {
             </h2>
             <div style={{ display: 'grid', gap: 24 }}>
               {/* Worker Info */}
-              <div className="card" style={{ background: '#fef3c7', border: '1px solid #fde68a' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#92400e' }}>
+              <div className="card" style={{ background: '#E0F2F1', border: '1px solid #80CBC4' }}>
+                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#00695C' }}>
                   🙋 कार्यकर्ता / Karyakarta (Worker)
                 </h3>
                 {profile?.workers ? (
@@ -622,13 +622,13 @@ export default function VoterProfile() {
                     )}
                   </div>
                 ) : (
-                  <p style={{ margin: 0, color: '#92400e' }}>No worker assigned</p>
+                  <p style={{ margin: 0, color: '#00695C' }}>No worker assigned</p>
                 )}
               </div>
 
               {/* Employee Info */}
-              <div className="card" style={{ background: '#dbeafe', border: '1px solid #93c5fd' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#1e40af' }}>
+              <div className="card" style={{ background: '#E3F0FF', border: '1px solid #90CAF9' }}>
+                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#0D47A1' }}>
                   💼 कर्मचारी / Employee
                 </h3>
                 {profile?.employees ? (
@@ -647,13 +647,13 @@ export default function VoterProfile() {
                     </div>
                   </div>
                 ) : (
-                  <p style={{ margin: 0, color: '#1e40af' }}>No employee assigned</p>
+                  <p style={{ margin: 0, color: '#0D47A1' }}>No employee assigned</p>
                 )}
               </div>
 
               {/* Village Info */}
-              <div className="card" style={{ background: '#d1fae5', border: '1px solid #a7f3d0' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#065f46' }}>
+              <div className="card" style={{ background: '#E8F5E9', border: '1px solid #A5D6A7' }}>
+                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#1B5E20' }}>
                   📍 स्थान माहिती / Location Information
                 </h3>
                 <div style={{ display: 'grid', gap: 12 }}>
