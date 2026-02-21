@@ -30,9 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('service_requests')
       .select(`
         *,
-        master_voters(id, voter_id, name_english, name_marathi, first_name, surname),
+        master_voters(id, voter_id, name_english, name_marathi, first_name, surname, voter_profiles(mobile, village)),
         service_types(id, name),
-        voter_profiles!left(mobile, village),
         service_request_status_logs(id, status, changed_by, changed_at)
       `)
       .eq('id', id)

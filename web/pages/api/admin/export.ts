@@ -52,9 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('service_requests')
         .select(`
           id, status, notes, created_at, updated_at, created_by,
-          master_voters(voter_id, name_english, name_marathi, first_name, surname),
-          service_types(name),
-          voter_profiles!left(mobile, village)
+          master_voters(voter_id, name_english, name_marathi, first_name, surname, voter_profiles(mobile, village)),
+          service_types(name)
         `)
         .order('created_at', { ascending: false });
 
@@ -67,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const rows = (data || []).map((r: any) => {
         const v = r.master_voters;
-        const p = Array.isArray(r.voter_profiles) ? r.voter_profiles[0] : r.voter_profiles;
+        const p = Array.isArray(v?.voter_profiles) ? v.voter_profiles[0] : v?.voter_profiles;
         const fields = [
           r.id, r.status,
           v?.voter_id, v?.name_english || `${v?.first_name || ''} ${v?.surname || ''}`.trim(), v?.name_marathi,

@@ -40,9 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         created_by,
         voter_id,
         service_type_id,
-        master_voters!inner(id, voter_id, name_english, name_marathi, first_name, surname),
-        service_types(id, name),
-        voter_profiles!left(mobile, village)
+        master_voters!inner(id, voter_id, name_english, name_marathi, first_name, surname, voter_profiles(mobile, village)),
+        service_types(id, name)
       `, { count: 'exact' });
 
     if (status) query = query.eq('status', status);
@@ -58,8 +57,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error) return res.status(500).json({ error: error.message });
 
     let rows = (data || []).map((r: any) => {
-      const profile = Array.isArray(r.voter_profiles) ? r.voter_profiles[0] : r.voter_profiles;
       const voter = r.master_voters;
+      const profile = voter?.voter_profiles;
+      const profileData = Array.isArray(profile) ? profile[0] : profile;
       return {
         id: r.id,
         status: r.status,
@@ -71,8 +71,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         voter_epic: voter?.voter_id,
         voter_name_english: voter?.name_english || `${voter?.first_name || ''} ${voter?.surname || ''}`.trim(),
         voter_name_marathi: voter?.name_marathi || '',
-        village: profile?.village || '',
-        mobile: profile?.mobile || '',
+        village: profileData?.village || '',
+        mobile: profileData?.mobile || '',
         service_type_id: r.service_type_id,
         service_type_name: r.service_types?.name || '',
       };
