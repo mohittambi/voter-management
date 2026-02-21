@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import NewRequestModal from '../components/NewRequestModal';
+import StatusHistoryModal from '../components/StatusHistoryModal';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../contexts/AuthContext';
 import { colors, SR_STATUS_CONFIG } from '../lib/colors';
-import { X, SlidersHorizontal, Plus, Check, MessageCircle, Clock, AlertTriangle } from 'lucide-react';
+import { X, SlidersHorizontal, Plus, MessageCircle, Clock, AlertTriangle } from 'lucide-react';
 
 const SR_STATUSES = [
   'Document Submitted',
@@ -15,10 +17,19 @@ const SR_STATUSES = [
 
 const STATUS_STYLES = SR_STATUS_CONFIG;
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, onClick }: { status: string; onClick?: () => void }) {
   const s = STATUS_STYLES[status] || { bg: colors.pageBg, color: colors.textSecondary, border: colors.borderLight };
   return (
-    <span style={{ padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color, border: `1px solid ${s.border}`, whiteSpace: 'nowrap' }}>
+    <span
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+      style={{
+        padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color, border: `1px solid ${s.border}`, whiteSpace: 'nowrap',
+        ...(onClick ? { cursor: 'pointer', userSelect: 'none' } : {}),
+      }}
+    >
       {status}
     </span>
   );
@@ -34,203 +45,6 @@ function Skeleton({ rows = 6 }: { rows?: number }) {
           ))}
         </div>
       ))}
-    </div>
-  );
-}
-
-interface NewRequestModalProps {
-  onClose: () => void;
-  onCreated: () => void;
-}
-function NewRequestModal({ onClose, onCreated }: NewRequestModalProps) {
-  const [voterSearch, setVoterSearch] = useState('');
-  const [voterResults, setVoterResults] = useState<any[]>([]);
-  const [selectedVoter, setSelectedVoter] = useState<any>(null);
-  const [serviceTypes, setServiceTypes] = useState<any[]>([]);
-  const [serviceTypeId, setServiceTypeId] = useState('');
-  const [notes, setNotes] = useState('');
-  const [searching, setSearching] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    fetch('/api/services').then(r => r.json()).then(d => setServiceTypes(d.filter((s: any) => s.active)));
-  }, []);
-
-  useEffect(() => {
-    if (!voterSearch.trim() || voterSearch.length < 2) { setVoterResults([]); return; }
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(async () => {
-      setSearching(true);
-      const res = await fetch(`/api/search?q=${encodeURIComponent(voterSearch)}`);
-      const d = await res.json();
-      setVoterResults(d.slice(0, 8));
-      setSearching(false);
-    }, 300);
-  }, [voterSearch]);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedVoter) return setError('Please select a voter / मतदार निवडा');
-    if (!serviceTypeId) return setError('Please select a service type / सेवा प्रकार निवडा');
-    setSubmitting(true);
-    setError('');
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/service-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
-        body: JSON.stringify({ voter_id: selectedVoter.id, service_type_id: serviceTypeId, notes }),
-      });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
-      onCreated();
-      onClose();
-    } catch (e: any) {
-      setError(e.message || 'Failed to create request / विनंती तयार करणे अयशस्वी');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-      <div style={{ position: 'relative', background: 'white', borderRadius: 16, padding: 32, width: 520, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>New Service Request</h3>
-            <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>नवीन सेवा विनंती</div>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
-        </div>
-
-        {error && <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#991b1b', fontSize: 13 }}>{error}</div>}
-
-        <form onSubmit={submit}>
-          {/* Voter search */}
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-              Select Voter / मतदार निवडा *
-            </label>
-            {selectedVoter ? (
-              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>
-                    {selectedVoter.name_english || `${selectedVoter.first_name || ''} ${selectedVoter.surname || ''}`.trim()}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#64748b' }}>{selectedVoter.voter_id} · {selectedVoter.village || ''}</div>
-                </div>
-                <button type="button" onClick={() => { setSelectedVoter(null); setVoterSearch(''); }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
-              </div>
-            ) : (
-              <div style={{ position: 'relative' }}>
-                <input
-                  value={voterSearch}
-                  onChange={e => setVoterSearch(e.target.value)}
-                  placeholder="Search by name or voter ID / नाव किंवा मतदार ID शोधा..."
-                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}
-                />
-                {searching && <div style={{ position: 'absolute', right: 12, top: 11, color: '#94a3b8', fontSize: 13 }}>Searching...</div>}
-                {voterResults.length > 0 && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 10, maxHeight: 240, overflowY: 'auto' }}>
-                    {voterResults.map(v => (
-                      <div key={v.id} onClick={() => { setSelectedVoter(v); setVoterResults([]); setVoterSearch(''); }} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: 14 }}
-                        onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'white'}>
-                        <div style={{ fontWeight: 600 }}>{v.name_english || `${v.first_name || ''} ${v.surname || ''}`.trim()}</div>
-                        <div style={{ fontSize: 12, color: '#64748b' }}>{v.voter_id} · {v.village || ''} {v.booth_number ? `· Booth ${v.booth_number}` : ''}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Service Type */}
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-              Service Type / सेवा प्रकार *
-            </label>
-            <select value={serviceTypeId} onChange={e => setServiceTypeId(e.target.value)} required style={{ width: '100%', padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, background: 'white' }}>
-              <option value="">Select service type / सेवा प्रकार निवडा</option>
-              {serviceTypes.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
-            </select>
-          </div>
-
-          {/* Notes */}
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-              Notes / नोंदी (optional)
-            </label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Additional details / अतिरिक्त माहिती..." rows={3} style={{ width: '100%', padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, resize: 'vertical', boxSizing: 'border-box' }} />
-          </div>
-
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={onClose} style={{ padding: '10px 20px', border: '1px solid #d1d5db', borderRadius: 8, background: 'white', fontSize: 14, cursor: 'pointer', fontWeight: 500 }}>
-              Cancel / रद्द करा
-            </button>
-            <button type="submit" disabled={submitting} className="btn-primary" style={{ padding: '10px 24px' }}>
-              {submitting ? 'Creating...' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={14} /> Create Request / विनंती तयार करा</span>}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-interface StatusHistoryModalProps { requestId: string; onClose: () => void; }
-function StatusHistoryModal({ requestId, onClose }: StatusHistoryModalProps) {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch(`/api/service-requests/${requestId}`).then(r => r.json()).then(d => { setData(d); setLoading(false); });
-  }, [requestId]);
-
-  const logs: any[] = data?.service_request_status_logs || [];
-  const sorted = [...logs].sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime());
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-      <div style={{ position: 'relative', background: 'white', borderRadius: 16, padding: 28, width: 460, maxWidth: '95vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Status History</h3>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>स्थिती बदल नोंदी · Request #{requestId.slice(0, 8)}</div>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
-        </div>
-        {loading ? (
-          <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>Loading... / लोड होत आहे...</div>
-        ) : sorted.length === 0 ? (
-          <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>No history found / इतिहास सापडला नाही</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {sorted.map((log, i) => {
-              const s = STATUS_STYLES[log.status] || { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' };
-              return (
-                <div key={log.id} style={{ display: 'flex', gap: 14, padding: '14px 0', borderBottom: i < sorted.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: s.color, border: `2px solid ${s.border}`, flexShrink: 0 }} />
-                    {i < sorted.length - 1 && <div style={{ width: 2, flex: 1, background: '#e2e8f0', margin: '4px 0' }} />}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <StatusBadge status={log.status} />
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>
-                      {new Date(log.changed_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>by {log.changed_by?.slice(0, 8) || 'system'}...</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -256,6 +70,8 @@ export default function ServiceRequestsPage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [historyRequestId, setHistoryRequestId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [statusOverlayRequestId, setStatusOverlayRequestId] = useState<string | null>(null);
+  const [statusOverlayDraft, setStatusOverlayDraft] = useState<string>('');
 
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
 
@@ -311,6 +127,7 @@ export default function ServiceRequestsPage() {
 
   async function updateStatus(requestId: string, newStatus: string) {
     setStatusUpdating(requestId);
+    setStatusOverlayRequestId(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`/api/service-requests/${requestId}`, {
@@ -326,6 +143,14 @@ export default function ServiceRequestsPage() {
       setStatusUpdating(null);
     }
   }
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setStatusOverlayRequestId(null);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   function whatsappUrl(mobile: string, voterName: string, serviceType: string, status: string) {
     const m = mobile.replace(/\D/g, '');
@@ -454,18 +279,29 @@ export default function ServiceRequestsPage() {
                     </td>
                     <td style={{ ...tdStyle, fontSize: 12, color: '#64748b' }}>{r.village || '—'}</td>
                     <td style={{ ...tdStyle, fontSize: 13, maxWidth: 160 }}>{r.service_type_name}</td>
-                    <td style={tdStyle}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <StatusBadge status={r.status} />
-                        <select
-                          value={r.status}
-                          onChange={e => updateStatus(r.id, e.target.value)}
-                          disabled={statusUpdating === r.id}
-                          onClick={e => e.stopPropagation()}
-                          style={{ fontSize: 11, padding: '3px 6px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', cursor: 'pointer', color: '#374151' }}
-                        >
-                          {SR_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
+                    <td style={{ ...tdStyle, position: 'relative' }}>
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <StatusBadge
+                          status={r.status}
+                          onClick={() => {
+                            setStatusOverlayRequestId(r.id);
+                            setStatusOverlayDraft(r.status);
+                          }}
+                        />
+                        {statusOverlayRequestId === r.id && (
+                          <>
+                            <div onClick={() => setStatusOverlayRequestId(null)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
+                            <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 51, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', padding: 12, minWidth: 220 }}>
+                              <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 6 }}>New status / नवीन स्थिती</label>
+                              <select value={statusOverlayDraft} onChange={e => setStatusOverlayDraft(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 12, background: 'white', marginBottom: 10 }}>
+                                {SR_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                              <button onClick={() => updateStatus(r.id, statusOverlayDraft)} disabled={statusUpdating === r.id} className="btn-primary" style={{ width: '100%', padding: '8px 12px', fontSize: 12 }}>
+                                {statusUpdating === r.id ? 'Updating...' : 'Update Status / स्थिती अपडेट करा'}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </td>
                     <td style={{ ...tdStyle, fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
@@ -507,13 +343,13 @@ export default function ServiceRequestsPage() {
                     <div style={{ fontSize: 12, color: '#64748b' }}>{r.service_type_name}</div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                    <StatusBadge status={r.status} />
+                    <StatusBadge status={r.status} onClick={() => { setExpandedRow(r.id); setStatusOverlayRequestId(r.id); setStatusOverlayDraft(r.status); }} />
                       {r.mobile && (
                       <a href={whatsappUrl(r.mobile, r.voter_name_english, r.service_type_name, r.status)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}><MessageCircle size={20} color="#16a34a" /></a>
                     )}
                   </div>
                 </div>
-                {expandedRow === r.id && (
+                {(expandedRow === r.id || statusOverlayRequestId === r.id) && (
                   <div style={{ marginTop: 10, padding: '10px 0', borderTop: '1px solid #f1f5f9', fontSize: 13 }}>
                     <div style={{ marginBottom: 6 }}><span style={{ color: '#94a3b8' }}>Voter ID: </span><span style={{ fontFamily: 'monospace', color: '#2563eb' }}>{r.voter_epic}</span></div>
                     <div style={{ marginBottom: 6 }}><span style={{ color: '#94a3b8' }}>Village: </span>{r.village || '—'}</div>
@@ -521,9 +357,17 @@ export default function ServiceRequestsPage() {
                     <div style={{ marginBottom: 10 }}><span style={{ color: '#94a3b8' }}>Notes: </span>{r.notes || '—'}</div>
                     <div style={{ marginBottom: 10 }}>
                       <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Update Status:</label>
-                      <select value={r.status} onChange={e => updateStatus(r.id, e.target.value)} disabled={statusUpdating === r.id} style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 13 }}>
-                        {SR_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                      {statusOverlayRequestId === r.id ? (
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <select value={statusOverlayDraft} onChange={e => setStatusOverlayDraft(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 13 }}>
+                            {SR_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                          <button onClick={() => updateStatus(r.id, statusOverlayDraft)} disabled={statusUpdating === r.id} className="btn-primary" style={{ padding: '8px 14px', fontSize: 12 }}>{statusUpdating === r.id ? '...' : 'Update'}</button>
+                          <button onClick={() => setStatusOverlayRequestId(null)} style={{ padding: '8px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <StatusBadge status={r.status} onClick={() => { setStatusOverlayRequestId(r.id); setStatusOverlayDraft(r.status); }} />
+                      )}
                     </div>
                     <button onClick={() => setHistoryRequestId(r.id)} style={{ width: '100%', padding: '8px', border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', color: '#0369a1', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                       <Clock size={13} /> View History / इतिहास पहा

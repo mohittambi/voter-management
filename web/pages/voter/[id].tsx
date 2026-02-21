@@ -3,13 +3,17 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import DashboardLayout from '../../components/DashboardLayout';
 import FamilyLinkModal from '../../src/components/FamilyLinkModal';
+import VoterProfileEditForm from '../../components/VoterProfileEditForm';
+import NewRequestModal from '../../components/NewRequestModal';
+import StatusHistoryModal from '../../components/StatusHistoryModal';
 import {
   User, Smartphone, ClipboardList, Home, HardHat, CreditCard, Vote as VoteIcon,
-  CheckCircle, AlertTriangle, Pencil, Save, Link2, Plus, Crown, Users, UserCheck,
-  Briefcase, MapPin, XCircle, Phone,
+  CheckCircle, AlertTriangle, Pencil, Link2, Plus, Crown, Users, UserCheck,
+  Briefcase, MapPin, XCircle, Phone, FileText, Clock,
 } from 'lucide-react';
+import { colors, SR_STATUS_CONFIG } from '../../lib/colors';
 
-type TabType = 'personal' | 'contact' | 'administrative' | 'family' | 'assignment';
+type TabType = 'personal' | 'contact' | 'administrative' | 'family' | 'assignment' | 'servicerequests';
 
 export default function VoterProfile() {
   const router = useRouter();
@@ -20,6 +24,10 @@ export default function VoterProfile() {
   const [activeTab, setActiveTab] = useState<TabType>('personal');
   const [editing, setEditing] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
+  const [historyRequestId, setHistoryRequestId] = useState<string | null>(null);
+  const [serviceRequests, setServiceRequests] = useState<any[]>([]);
+  const [srLoading, setSrLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,37 +52,21 @@ export default function VoterProfile() {
       .catch(() => setLoading(false));
   }, [id]);
 
-  async function saveProfile(e: any) {
-    e.preventDefault();
-    const form = new FormData(e.target);
-    const body: any = {
-      voter_id: voter.id,
-      dob: form.get('dob'),
-      mobile: form.get('mobile'),
-      aadhaar_masked: form.get('aadhaar_masked'),
-      email: form.get('email'),
-      social_ids: { facebook: form.get('facebook'), instagram: form.get('instagram') }
-    };
-    const res = await fetch('/api/profile/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (res.ok) {
-      const updated = await res.json();
-      setProfile(updated);
-      setEditing(false);
-    } else {
-      alert('Update failed');
-    }
-  }
-
   function onFamilyLinked() {
     setShowLinkModal(false);
     fetch(`/api/family/info?voter_id=${id}`)
       .then(r => r.json())
       .then(d => setFamilyInfo(d));
   }
+
+  useEffect(() => {
+    if (!id) return;
+    setSrLoading(true);
+    fetch(`/api/service-requests?voter_id=${id}&pageSize=100`)
+      .then(r => r.json())
+      .then(d => setServiceRequests(d.data || []))
+      .finally(() => setSrLoading(false));
+  }, [id]);
 
   if (loading) {
     return (
@@ -104,6 +96,7 @@ export default function VoterProfile() {
     { id: 'administrative', label: 'प्रशासकीय / Administrative', icon: <ClipboardList size={17} /> },
     { id: 'family', label: 'कुटुंब / Family', icon: <Home size={17} /> },
     { id: 'assignment', label: 'नियुक्ती / Assignment', icon: <HardHat size={17} /> },
+    { id: 'servicerequests', label: 'सेवा विनंत्या / Service Requests', icon: <FileText size={17} /> },
   ];
 
   return (
@@ -339,42 +332,15 @@ export default function VoterProfile() {
                 </div>
               </div>
             ) : (
-              <form onSubmit={saveProfile}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
-                  <div>
-                    <label className="label">Date of Birth</label>
-                    <input name="dob" defaultValue={profile?.dob || ''} type="date" className="input" />
-                  </div>
-                  <div>
-                    <label className="label">Mobile Number</label>
-                    <input name="mobile" defaultValue={profile?.mobile || ''} className="input" placeholder="10-digit mobile" />
-                  </div>
-                  <div>
-                    <label className="label">Email</label>
-                    <input name="email" defaultValue={profile?.email || ''} type="email" className="input" placeholder="email@example.com" />
-                  </div>
-                  <div>
-                    <label className="label">Aadhaar (Masked)</label>
-                    <input name="aadhaar_masked" defaultValue={profile?.aadhaar_masked || ''} className="input" placeholder="XXXX-XXXX-1234" />
-                  </div>
-                  <div>
-                    <label className="label">Facebook</label>
-                    <input name="facebook" defaultValue={profile?.social_ids?.facebook || ''} className="input" placeholder="Username" />
-                  </div>
-                  <div>
-                    <label className="label">Instagram</label>
-                    <input name="instagram" defaultValue={profile?.social_ids?.instagram || ''} className="input" placeholder="Username" />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={() => setEditing(false)} className="btn-secondary">
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <Save size={14} /> Save Changes
-                  </button>
-                </div>
-              </form>
+              <VoterProfileEditForm
+                voter={voter}
+                profile={profile}
+                onSave={(updated) => {
+                  setProfile(updated);
+                  setEditing(false);
+                }}
+                onCancel={() => setEditing(false)}
+              />
             )}
           </div>
         )}
@@ -589,6 +555,57 @@ export default function VoterProfile() {
           </div>
         )}
 
+        {/* Service Requests Tab */}
+        {activeTab === 'servicerequests' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FileText size={20} /> सेवा विनंत्या / Service Requests
+              </h2>
+              <button onClick={() => setShowNewRequestModal(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Plus size={14} /> New Request / नवीन विनंती
+              </button>
+            </div>
+            {srLoading ? (
+              <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>Loading...</div>
+            ) : serviceRequests.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 48, background: '#F5F7FA', borderRadius: 8 }}>
+                <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><FileText size={40} color="#94a3b8" /></div>
+                <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 14 }}>No service requests for this voter</p>
+                <button onClick={() => setShowNewRequestModal(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Plus size={14} /> New Request / नवीन विनंती
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {serviceRequests.map((r: any) => {
+                  const s = SR_STATUS_CONFIG[r.status] || { bg: colors.pageBg, color: colors.textSecondary, border: colors.borderLight };
+                  return (
+                    <div key={r.id} className="card" style={{ padding: 16, border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#64748b' }}>#{r.id.slice(0, 8)}</span>
+                            <span style={{ padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>{r.status}</span>
+                          </div>
+                          <div style={{ fontSize: 15, fontWeight: 600, color: '#0f172a' }}>{r.service_type_name}</div>
+                          {r.notes && <div style={{ fontSize: 13, color: '#64748b', marginTop: 6 }}>{r.notes}</div>}
+                          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>
+                            Raised: {new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} · Updated: {new Date(r.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </div>
+                        </div>
+                        <button onClick={() => setHistoryRequestId(r.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', color: '#0369a1', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                          <Clock size={12} /> History / इतिहास
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Assignment Tab */}
         {activeTab === 'assignment' && (
           <div>
@@ -692,6 +709,18 @@ export default function VoterProfile() {
       </div>
 
       {showLinkModal && <FamilyLinkModal voter={voter} onClose={onFamilyLinked} />}
+      {showNewRequestModal && (
+        <NewRequestModal
+          onClose={() => setShowNewRequestModal(false)}
+          onCreated={() => {
+            setShowNewRequestModal(false);
+            fetch(`/api/service-requests?voter_id=${id}&pageSize=100`).then(r => r.json()).then(d => setServiceRequests(d.data || []));
+          }}
+          initialVoter={{ id: voter.id, voter_id: voter.voter_id, name_english: voter.name_english || `${voter.first_name || ''} ${voter.surname || ''}`.trim(), first_name: voter.first_name, surname: voter.surname, village: profile?.village }}
+          lockVoter={true}
+        />
+      )}
+      {historyRequestId && <StatusHistoryModal requestId={historyRequestId} onClose={() => setHistoryRequestId(null)} />}
     </DashboardLayout>
   );
 }

@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       page = '1', pageSize = '50',
       q = '', service_type = '', status = '',
       village = '', date_from = '', date_to = '',
-      raised_by = '',
+      raised_by = '', voter_id: voterIdParam = '',
     } = req.query as Record<string, string>;
 
     const ps = Math.min(parseInt(pageSize) || 50, 100);
@@ -50,6 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (date_from) query = query.gte('created_at', date_from);
     if (date_to) query = query.lte('created_at', date_to + 'T23:59:59');
     if (raised_by) query = query.eq('created_by', raised_by);
+    if (voterIdParam.trim()) query = query.eq('voter_id', voterIdParam.trim());
 
     query = query.order('created_at', { ascending: false }).range(from, to);
 

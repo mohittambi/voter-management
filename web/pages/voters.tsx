@@ -3,7 +3,8 @@ import { useRouter } from 'next/router';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { colors, VOTER_STATUS_CONFIG } from '../lib/colors';
-import { Search, SlidersHorizontal, Upload, X, AlertTriangle, CheckCircle2, Copy, Phone } from 'lucide-react';
+import AddVoterModal from '../components/AddVoterModal';
+import { Search, SlidersHorizontal, Upload, X, AlertTriangle, CheckCircle2, Copy, Phone, UserPlus } from 'lucide-react';
 
 const PAGE_SIZES = [25, 50, 100];
 const STATUS_OPTIONS = ['Active', 'मयत', 'दुबार', 'बेपत्ता'];
@@ -173,6 +174,7 @@ export default function VotersPage() {
 
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [showAddVoter, setShowAddVoter] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -280,7 +282,10 @@ export default function VotersPage() {
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><SlidersHorizontal size={14} /> Filters {hasFilters ? `(${[q, booth, village, gender, caste, ageMin, ageMax, status].filter(Boolean).length})` : ''}</span>
           </button>
-          <button onClick={() => setShowUpload(true)} className="btn-primary" style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', background: 'linear-gradient(135deg,#10b981,#059669)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={() => setShowAddVoter(true)} className="btn-primary" style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <UserPlus size={14} /> Add Voter
+          </button>
+          <button onClick={() => setShowUpload(true)} style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none', borderRadius: 8, color: 'white', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Upload size={14} /> Upload
           </button>
         </div>
@@ -500,6 +505,7 @@ export default function VotersPage() {
           )}
         </div>
 
+        {showAddVoter && <AddVoterModal onClose={() => setShowAddVoter(false)} onSuccess={() => { setShowAddVoter(false); fetchVoters(); }} />}
         {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={() => fetchVoters()} />}
 
         <style>{`

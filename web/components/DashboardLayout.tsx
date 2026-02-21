@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../lib/colors';
-import { LayoutDashboard, Users, ClipboardList, Settings, Vote, Crown, User, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, ClipboardList, Settings, Vote, Crown, User, LogOut, Menu, X, Cake } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/',                 label: 'Dashboard',        labelMr: 'डॅशबोर्ड',    icon: <LayoutDashboard size={19} />, adminOnly: false },
   { href: '/voters',           label: 'Voters',           labelMr: 'मतदार',       icon: <Users size={19} />,           adminOnly: false },
   { href: '/service-requests', label: 'Service Requests', labelMr: 'सेवा विनंत्या', icon: <ClipboardList size={19} />,  adminOnly: false },
+  { href: '/birthdays',        label: 'Birthdays',        labelMr: 'जन्मदिन',     icon: <Cake size={19} />,            adminOnly: false },
   { href: '/admin',            label: 'Admin',            labelMr: 'प्रशासन',     icon: <Settings size={19} />,        adminOnly: true },
 ];
 

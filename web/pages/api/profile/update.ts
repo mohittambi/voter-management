@@ -4,7 +4,7 @@ import { getServiceRoleClient } from '../../../lib/supabaseClient';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end();
   try {
-    const { voter_id, dob, mobile, aadhaar_masked, email, social_ids } = req.body;
+    const { voter_id, dob, mobile, aadhaar_masked, email, address_marathi, address_english, social_ids } = req.body;
     if (!voter_id) return res.status(400).json({ error: 'voter_id required' });
     const supabase = getServiceRoleClient();
 
@@ -12,7 +12,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await supabase
       .from('voter_profiles')
       .upsert(
-        [{ voter_id, dob: dob || null, mobile: mobile || null, aadhaar_masked: aadhaar_masked || null, email: email || null, social_ids: social_ids || null }],
+        [{
+          voter_id,
+          dob: dob || null,
+          mobile: mobile || null,
+          aadhaar_masked: aadhaar_masked || null,
+          email: email || null,
+          address_marathi: address_marathi || null,
+          address_english: address_english || null,
+          social_ids: social_ids || null,
+        }],
         { onConflict: 'voter_id' }
       )
       .select()
