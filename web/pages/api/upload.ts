@@ -100,9 +100,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // ── STEP 2: batch upsert workers, employees, villages ────────────────────
-    await batchInsert('workers', [...workerMap.values()]);
-    await batchInsert('employees', [...employeeMap.values()]);
-    await batchInsert('villages', [...villageMap.values()]);
+    await batchInsert('workers', Array.from(workerMap.values()));
+    await batchInsert('employees', Array.from(employeeMap.values()));
+    await batchInsert('villages', Array.from(villageMap.values()));
 
     // ── STEP 3: fetch back their IDs ─────────────────────────────────────────
     const workerNameToId = new Map<string, string>();
@@ -110,15 +110,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const villageNameToId = new Map<string, string>();
 
     if (workerMap.size > 0) {
-      const { data: ws } = await supabase.from('workers').select('id, name').in('name', [...workerMap.keys()]);
+      const { data: ws } = await supabase.from('workers').select('id, name').in('name', Array.from(workerMap.keys()));
       ws?.forEach(w => workerNameToId.set(w.name, w.id));
     }
     if (employeeMap.size > 0) {
-      const { data: es } = await supabase.from('employees').select('id, employee_id').in('employee_id', [...employeeMap.keys()]);
+      const { data: es } = await supabase.from('employees').select('id, employee_id').in('employee_id', Array.from(employeeMap.keys()));
       es?.forEach(e => employeeCodeToId.set(e.employee_id, e.id));
     }
     if (villageMap.size > 0) {
-      const { data: vs } = await supabase.from('villages').select('id, name').in('name', [...villageMap.keys()]);
+      const { data: vs } = await supabase.from('villages').select('id, name').in('name', Array.from(villageMap.keys()));
       vs?.forEach(v => villageNameToId.set(v.name, v.id));
     }
 
