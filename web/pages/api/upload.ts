@@ -15,310 +15,192 @@ export const config = {
   },
 };
 
-// Helper: Convert Excel serial date to ISO date
 function excelDateToISO(serial: number): string | null {
   if (!serial || typeof serial !== 'number') return null;
   const utc_days = Math.floor(serial - 25569);
-  const utc_value = utc_days * 86400;
-  const date_info = new Date(utc_value * 1000);
+  const date_info = new Date(utc_days * 86400 * 1000);
   return date_info.toISOString().split('T')[0];
 }
 
-// Helper: Parse Marathi full name
 function parseMarathiName(fullName: string): { firstName: string; middleName: string; surname: string } {
   if (!fullName) return { firstName: '', middleName: '', surname: '' };
   const parts = fullName.trim().split(/\s+/);
   if (parts.length === 1) return { firstName: '', middleName: '', surname: parts[0] };
   if (parts.length === 2) return { firstName: parts[1], middleName: '', surname: parts[0] };
-  // Format: Surname FirstName MiddleName
   return { firstName: parts[1] || '', middleName: parts[2] || '', surname: parts[0] || '' };
 }
 
-// Helper: Map Marathi relationship to English
 function mapRelationship(marathiRelation: string): string {
   const mapping: Record<string, string> = {
-    'बायको': 'spouse',
-    'नवरा': 'spouse',
-    'मुलगा': 'son',
-    'मुलगी': 'daughter',
-    'आई': 'mother',
-    'बाप': 'father',
-    'भाऊ': 'sibling',
-    'बहीण': 'sibling',
-    'स्वतः': 'self',
+    'बायको': 'spouse', 'नवरा': 'spouse', 'मुलगा': 'son', 'मुलगी': 'daughter',
+    'आई': 'mother', 'बाप': 'father', 'भाऊ': 'sibling', 'बहीण': 'sibling', 'स्वतः': 'self',
   };
   return mapping[marathiRelation?.trim()] || 'other';
 }
 
+async function batchInsert<T extends object>(table: string, rows: T[], chunkSize = 500): Promise<void> {
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const { error } = await supabase.from(table).upsert(chunk as any, { ignoreDuplicates: true });
+    if (error) console.error(`batchInsert ${table} error:`, error.message);
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end();
-  
+
   try {
-    // Parse multipart form
     const form = formidable({});
-    const [fields, files] = await form.parse(req);
+    const [, files] = await form.parse(req);
     const file = files.file?.[0];
     if (!file) return res.status(400).json({ error: 'no file uploaded' });
 
     const filename = file.originalFilename || 'upload.xlsx';
-    const filePath = file.filepath;
-
-    // Read and parse Excel
-    const buffer = fs.readFileSync(filePath);
+    const buffer = fs.readFileSync(file.filepath);
     const workbook = XLSX.read(buffer);
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const records = XLSX.utils.sheet_to_json<Record<string, any>>(sheet);
+    const records = XLSX.utils.sheet_to_json<Record<string, any>>(workbook.Sheets[workbook.SheetNames[0]]);
 
-    // Upload file to Supabase Storage
+    // Upload file to storage (non-blocking, best-effort)
     const storagePath = `${Date.now()}-${filename}`;
-    const { error: uploadErr } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(storagePath, buffer, {
-        contentType: file.mimetype || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        upsert: false,
-      });
-    if (uploadErr) throw uploadErr;
+    supabase.storage.from(STORAGE_BUCKET).upload(storagePath, buffer, {
+      contentType: file.mimetype || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      upsert: false,
+    });
 
     // Create import record
     const { data: importData, error: impErr } = await supabase
       .from('imports')
-      .insert([{ 
-        filename, 
-        uploaded_by: null, 
-        record_count: records.length, 
-        storage_path: storagePath 
-      }])
-      .select()
-      .single();
+      .insert([{ filename, uploaded_by: null, record_count: records.length, storage_path: storagePath }])
+      .select().single();
     if (impErr) throw impErr;
 
-    let importedCount = 0;
-    let familiesCreated = 0;
-    const familyMap = new Map<string, string>(); // Map family head name to family_id
+    // ── STEP 1: collect unique workers, employees, villages ──────────────────
+    const workerMap = new Map<string, { name: string; mobile?: string; epic_number?: string }>();
+    const employeeMap = new Map<string, { name: string; employee_id: string }>();
+    const villageMap = new Map<string, { name: string; new_gan?: string; new_gat?: string }>();
 
-    // Process records in batches
-    for (let i = 0; i < records.length; i += 100) {
-      const batch = records.slice(i, i + 100);
-      
-      for (const record of batch) {
-        try {
-          // Skip if no voter_id
-          if (!record.voter_id) continue;
-
-          // Parse names
-          const marathiName = record['मतदाराचे नाव'] || '';
-          const parsedName = parseMarathiName(marathiName);
-          
-          // Get or create worker
-          let workerId = null;
-          const workerName = record['कार्यकर्ता'];
-          const workerMobile = record['मोबाइल नं']?.toString();
-          const workerEpic = record[' कार्यकर्ता Epic No.'];
-          
-          if (workerName) {
-            const { data: existingWorker } = await supabase
-              .from('workers')
-              .select('id')
-              .eq('name', workerName)
-              .maybeSingle();
-            
-            if (existingWorker) {
-              workerId = existingWorker.id;
-            } else {
-              const { data: newWorker } = await supabase
-                .from('workers')
-                .insert({ name: workerName, mobile: workerMobile, epic_number: workerEpic })
-                .select('id')
-                .single();
-              if (newWorker) workerId = newWorker.id;
-            }
-          }
-
-          // Get or create employee
-          let employeeId = null;
-          const employeeName = record['कर्मचारी नाव'];
-          const employeeIdNum = record['कर्मचारी आय डी'];
-          
-          if (employeeName && employeeIdNum) {
-            const { data: existingEmp } = await supabase
-              .from('employees')
-              .select('id')
-              .eq('employee_id', employeeIdNum)
-              .maybeSingle();
-            
-            if (existingEmp) {
-              employeeId = existingEmp.id;
-            } else {
-              const { data: newEmp } = await supabase
-                .from('employees')
-                .insert({ name: employeeName, employee_id: employeeIdNum })
-                .select('id')
-                .single();
-              if (newEmp) employeeId = newEmp.id;
-            }
-          }
-
-          // Get or create village
-          let villageId = null;
-          const villageName = record['गाव'];
-          const newGan = record['नवीन गण'];
-          const newGat = record['नवीन गट'];
-          
-          if (villageName) {
-            const { data: existingVillage } = await supabase
-              .from('villages')
-              .select('id')
-              .eq('name', villageName)
-              .maybeSingle();
-            
-            if (existingVillage) {
-              villageId = existingVillage.id;
-            } else {
-              const { data: newVillage } = await supabase
-                .from('villages')
-                .insert({ name: villageName, new_gan: newGan, new_gat: newGat })
-                .select('id')
-                .single();
-              if (newVillage) villageId = newVillage.id;
-            }
-          }
-
-          // Insert or update master_voters
-          const voterData = {
-            first_name: parsedName.firstName || record.name_english?.split(' ')[0] || null,
-            middle_name: parsedName.middleName || null,
-            surname: parsedName.surname || record.surname || null,
-            voter_id: record.voter_id,
-            raw_import_id: importData.id,
-            booth_number: record['बुथ नं'] || null,
-            serial_number: record['अनुक्रमांक'] || null,
-            name_marathi: marathiName || null,
-            name_english: record.name_english || null,
-            surname_marathi: parsedName.surname || null,
-            caste: record['जात'] || null,
-            age: record.age || null,
-            gender: record.gender || null,
-            assembly_constituency: record.zAC_AC2024?.toString() || null,
-          };
-
-          const { data: insertedVoter, error: voterErr } = await supabase
-            .from('master_voters')
-            .upsert(voterData, { onConflict: 'voter_id' })
-            .select('id')
-            .single();
-
-          if (voterErr || !insertedVoter) {
-            console.error('voter insert error:', voterErr);
-            continue;
-          }
-
-          const voterId = insertedVoter.id;
-
-          // Insert voter_profile
-          const profileData = {
-            voter_id: voterId,
-            dob: excelDateToISO(record['जन्मतारीख']),
-            mobile: record['मोबाईल नंबर']?.toString() || null,
-            mobile_secondary: null,
-            address_marathi: record.address_marathi || null,
-            address_english: null,
-            village: villageName || null,
-            status: record['मयत/दुबार/बेपत्ता'] || 'Active',
-            worker_id: workerId,
-            employee_id: employeeId,
-            village_id: villageId,
-          };
-
-          await supabase
-            .from('voter_profiles')
-            .upsert(profileData, { onConflict: 'voter_id', ignoreDuplicates: false });
-
-          importedCount++;
-
-          // Handle family linking
-          const familyHeadName = record['कुटुंबप्रमुख'];
-          const isHead = record.kutumb_pramukh === 1;
-          const relationship = record['नाते'];
-
-          if (familyHeadName) {
-            if (isHead) {
-              // This voter is a family head
-              if (!familyMap.has(familyHeadName)) {
-                // Create new family
-                const { data: newFamily } = await supabase
-                  .from('families')
-                  .insert({ head_voter_id: voterId })
-                  .select('id')
-                  .single();
-                
-                if (newFamily) {
-                  familyMap.set(familyHeadName, newFamily.id);
-                  familiesCreated++;
-                }
-              }
-            } else {
-              // This voter is a family member
-              // Find family head by name
-              const { data: headVoter } = await supabase
-                .from('master_voters')
-                .select('id')
-                .eq('name_marathi', familyHeadName)
-                .maybeSingle();
-
-              if (headVoter) {
-                // Check if family exists for this head
-                const { data: existingFamily } = await supabase
-                  .from('families')
-                  .select('id')
-                  .eq('head_voter_id', headVoter.id)
-                  .maybeSingle();
-
-                let familyId = existingFamily?.id;
-
-                if (!familyId) {
-                  // Create family for this head
-                  const { data: newFamily } = await supabase
-                    .from('families')
-                    .insert({ head_voter_id: headVoter.id })
-                    .select('id')
-                    .single();
-                  
-                  if (newFamily) {
-                    familyId = newFamily.id;
-                    familyMap.set(familyHeadName, familyId);
-                    familiesCreated++;
-                  }
-                }
-
-                // Link this voter as family member
-                if (familyId) {
-                  await supabase
-                    .from('family_members')
-                    .insert({
-                      family_id: familyId,
-                      voter_id: voterId,
-                      relationship: mapRelationship(relationship),
-                      relationship_marathi: relationship,
-                    })
-                    .select();
-                }
-              }
-            }
-          }
-
-        } catch (err) {
-          console.error('Error processing record:', err);
-        }
+    for (const r of records) {
+      const workerName = r['कार्यकर्ता'];
+      if (workerName && !workerMap.has(workerName)) {
+        workerMap.set(workerName, {
+          name: workerName,
+          mobile: r['मोबाइल नं']?.toString(),
+          epic_number: r[' कार्यकर्ता Epic No.'],
+        });
+      }
+      const empName = r['कर्मचारी नाव'];
+      const empId = r['कर्मचारी आय डी'];
+      if (empName && empId && !employeeMap.has(empId)) {
+        employeeMap.set(empId, { name: empName, employee_id: empId });
+      }
+      const village = r['गाव'];
+      if (village && !villageMap.has(village)) {
+        villageMap.set(village, { name: village, new_gan: r['नवीन गण'], new_gat: r['नवीन गट'] });
       }
     }
 
-    return res.status(200).json({ 
-      imported: importedCount, 
-      families_created: familiesCreated,
-      import_id: importData.id 
+    // ── STEP 2: batch upsert workers, employees, villages ────────────────────
+    await batchInsert('workers', [...workerMap.values()]);
+    await batchInsert('employees', [...employeeMap.values()]);
+    await batchInsert('villages', [...villageMap.values()]);
+
+    // ── STEP 3: fetch back their IDs ─────────────────────────────────────────
+    const workerNameToId = new Map<string, string>();
+    const employeeCodeToId = new Map<string, string>();
+    const villageNameToId = new Map<string, string>();
+
+    if (workerMap.size > 0) {
+      const { data: ws } = await supabase.from('workers').select('id, name').in('name', [...workerMap.keys()]);
+      ws?.forEach(w => workerNameToId.set(w.name, w.id));
+    }
+    if (employeeMap.size > 0) {
+      const { data: es } = await supabase.from('employees').select('id, employee_id').in('employee_id', [...employeeMap.keys()]);
+      es?.forEach(e => employeeCodeToId.set(e.employee_id, e.id));
+    }
+    if (villageMap.size > 0) {
+      const { data: vs } = await supabase.from('villages').select('id, name').in('name', [...villageMap.keys()]);
+      vs?.forEach(v => villageNameToId.set(v.name, v.id));
+    }
+
+    // ── STEP 4: batch upsert master_voters ───────────────────────────────────
+    const validRecords = records.filter(r => r.voter_id);
+    const voterRows = validRecords.map(r => {
+      const parsed = parseMarathiName(r['मतदाराचे नाव'] || '');
+      return {
+        voter_id: r.voter_id,
+        first_name: parsed.firstName || r.name_english?.split(' ')[0] || null,
+        middle_name: parsed.middleName || null,
+        surname: parsed.surname || r.surname || null,
+        raw_import_id: importData.id,
+        booth_number: r['बुथ नं'] || null,
+        serial_number: r['अनुक्रमांक'] || null,
+        name_marathi: r['मतदाराचे नाव'] || null,
+        name_english: r.name_english || null,
+        surname_marathi: parsed.surname || null,
+        caste: r['जात'] || null,
+        age: r.age || null,
+        gender: r.gender || null,
+        assembly_constituency: r.zAC_AC2024?.toString() || null,
+      };
     });
-    
+
+    for (let i = 0; i < voterRows.length; i += 500) {
+      const chunk = voterRows.slice(i, i + 500);
+      await supabase.from('master_voters').upsert(chunk, { onConflict: 'voter_id' });
+    }
+
+    // ── STEP 5: fetch voter UUIDs ─────────────────────────────────────────────
+    const voterIdToUUID = new Map<string, string>();
+    for (let i = 0; i < validRecords.length; i += 500) {
+      const chunk = validRecords.slice(i, i + 500).map(r => r.voter_id);
+      const { data: vs } = await supabase.from('master_voters').select('id, voter_id').in('voter_id', chunk);
+      vs?.forEach(v => voterIdToUUID.set(v.voter_id, v.id));
+    }
+
+    // ── STEP 6: batch upsert voter_profiles ──────────────────────────────────
+    const profileRows = validRecords
+      .map(r => {
+        const uuid = voterIdToUUID.get(r.voter_id);
+        if (!uuid) return null;
+        return {
+          voter_id: uuid,
+          dob: excelDateToISO(r['जन्मतारीख']),
+          mobile: r['मोबाईल नंबर']?.toString() || null,
+          mobile_secondary: null,
+          address_marathi: r.address_marathi || null,
+          village: r['गाव'] || null,
+          status: r['मयत/दुबार/बेपत्ता'] || 'Active',
+          worker_id: workerNameToId.get(r['कार्यकर्ता']) || null,
+          employee_id: employeeCodeToId.get(r['कर्मचारी आय डी']) || null,
+          village_id: villageNameToId.get(r['गाव']) || null,
+        };
+      })
+      .filter(Boolean) as object[];
+
+    for (let i = 0; i < profileRows.length; i += 500) {
+      const chunk = profileRows.slice(i, i + 500);
+      await supabase.from('voter_profiles').upsert(chunk, { onConflict: 'voter_id', ignoreDuplicates: false });
+    }
+
+    // ── STEP 7: families (lightweight, only for heads) ────────────────────────
+    const headRecords = validRecords.filter(r => r.kutumb_pramukh === 1 && r['कुटुंबप्रमुख']);
+    let familiesCreated = 0;
+    for (const r of headRecords) {
+      const uuid = voterIdToUUID.get(r.voter_id);
+      if (!uuid) continue;
+      const { data: existing } = await supabase.from('families').select('id').eq('head_voter_id', uuid).maybeSingle();
+      if (!existing) {
+        await supabase.from('families').insert({ head_voter_id: uuid });
+        familiesCreated++;
+      }
+    }
+
+    return res.status(200).json({
+      imported: validRecords.length,
+      families_created: familiesCreated,
+      import_id: importData.id,
+    });
+
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.message || 'server error' });
