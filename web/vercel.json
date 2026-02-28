@@ -1,4 +1,13 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "regions": ["hnd1"],
+  "functions": {
+    "pages/api/upload.ts": {
+      "maxDuration": 60
+    },
+    "pages/api/**": {
+      "maxDuration": 30
+    }
+  }
 }
