@@ -38,10 +38,10 @@ function mapRelationship(marathiRelation: string): string {
   return mapping[marathiRelation?.trim()] || 'other';
 }
 
-async function batchInsert<T extends object>(table: string, rows: T[], chunkSize = 500): Promise<void> {
+async function batchInsert<T extends object>(table: string, rows: T[], onConflict: string, chunkSize = 500): Promise<void> {
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize);
-    const { error } = await supabase.from(table).upsert(chunk as any, { ignoreDuplicates: true });
+    const { error } = await supabase.from(table).upsert(chunk as any, { onConflict, ignoreDuplicates: true });
     if (error) console.error(`batchInsert ${table} error:`, error.message);
   }
 }
@@ -100,9 +100,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // ── STEP 2: batch upsert workers, employees, villages ────────────────────
-    await batchInsert('workers', Array.from(workerMap.values()));
-    await batchInsert('employees', Array.from(employeeMap.values()));
-    await batchInsert('villages', Array.from(villageMap.values()));
+    await batchInsert('workers', Array.from(workerMap.values()), 'name,mobile');
+    await batchInsert('employees', Array.from(employeeMap.values()), 'employee_id');
+    await batchInsert('villages', Array.from(villageMap.values()), 'name');
 
     // ── STEP 3: fetch back their IDs ─────────────────────────────────────────
     const workerNameToId = new Map<string, string>();
