@@ -52,15 +52,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function fetchUserRole(userId: string) {
-    const res = await fetch(`/api/auth/role?user_id=${userId}`);
-    if (res.ok) {
-      const data = await res.json();
-      setRole(data.role || 'office_user');
-    } else {
-      setRole('office_user'); // default
+  async function fetchUserRole(userId: string, attempt = 1) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(`/api/auth/role?user_id=${userId}`, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json();
+        setRole(data.role || 'office_user');
+      } else {
+        setRole('office_user');
+      }
+    } catch {
+      // Retry once on timeout/network error (cold start)
+      if (attempt < 3) {
+        await new Promise(r => setTimeout(r, 1000));
+        return fetchUserRole(userId, attempt + 1);
+      }
+      setRole('office_user');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function signIn(email: string, password: string) {
