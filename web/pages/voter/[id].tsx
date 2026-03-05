@@ -8,8 +8,9 @@ import NewRequestModal from '../../components/NewRequestModal';
 import StatusHistoryModal from '../../components/StatusHistoryModal';
 import {
   User, Smartphone, ClipboardList, Home, HardHat, CreditCard, Vote as VoteIcon,
-  CheckCircle, AlertTriangle, Pencil, Link2, Plus, Crown, Users, UserCheck,
-  Briefcase, MapPin, XCircle, Phone, FileText, Clock,
+  CheckCircle, AlertTriangle, Pencil, Plus, Crown, Users, UserCheck,
+  Briefcase, MapPin, XCircle, Phone, FileText, Clock, X,
+  Facebook, Instagram, Twitter, Youtube, Linkedin, MessageCircle,
 } from 'lucide-react';
 import { colors, SR_STATUS_CONFIG } from '../../lib/colors';
 import { apiUrl } from '../../lib/api';
@@ -23,7 +24,7 @@ export default function VoterProfile() {
   const [profile, setProfile] = useState<any>(null);
   const [familyInfo, setFamilyInfo] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<TabType>('personal');
-  const [editing, setEditing] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const [historyRequestId, setHistoryRequestId] = useState<string | null>(null);
@@ -170,8 +171,12 @@ export default function VoterProfile() {
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: 12 }}>
-            {!editing && activeTab !== 'family' && (
-              <button onClick={() => setEditing(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {activeTab !== 'family' && (
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="btn-primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
                 <Pencil size={14} /> Edit
               </button>
             )}
@@ -189,10 +194,7 @@ export default function VoterProfile() {
           {tabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id as TabType);
-                setEditing(false);
-              }}
+              onClick={() => setActiveTab(tab.id as TabType)}
               style={{
                 flex: 1,
                 minWidth: 180,
@@ -275,6 +277,30 @@ export default function VoterProfile() {
                   {voter.caste || '—'}
                 </p>
               </div>
+              <div>
+                <label className="label">जात वर्ग / Caste Category</label>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  {profile?.caste_category || '—'}
+                </p>
+              </div>
+              <div>
+                <label className="label">शिक्षण / Education</label>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  {profile?.education || '—'}
+                </p>
+              </div>
+              <div>
+                <label className="label">व्यवसाय / Occupation</label>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  {profile?.occupation || '—'}
+                </p>
+              </div>
+              <div>
+                <label className="label">वर्धापन दिन / Anniversary Date</label>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  {profile?.anniversary_date || '—'}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -286,15 +312,12 @@ export default function VoterProfile() {
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Smartphone size={20} /> संपर्क माहिती / Contact Information
               </h2>
-              {!editing && (
-                <button onClick={() => setEditing(true)} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Pencil size={14} /> Edit Contact
-                </button>
-              )}
+              <button onClick={() => setShowEditModal(true)} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Pencil size={14} /> Edit Contact
+              </button>
             </div>
 
-            {!editing ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
                 <div>
                   <label className="label">मोबाईल नंबर / Mobile Number</label>
                   <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
@@ -302,9 +325,21 @@ export default function VoterProfile() {
                   </p>
                 </div>
                 <div>
+                  <label className="label">Mobile (Secondary)</label>
+                  <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                    {profile?.mobile_secondary || '—'}
+                  </p>
+                </div>
+                <div>
                   <label className="label">ईमेल / Email</label>
                   <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
                     {profile?.email || '—'}
+                  </p>
+                </div>
+                <div>
+                  <label className="label">रेशन कार्ड प्रकार / Ration Card Type</label>
+                  <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                    {profile?.ration_card_type || '—'}
                   </p>
                 </div>
                 <div style={{ gridColumn: 'span 2' }}>
@@ -321,28 +356,43 @@ export default function VoterProfile() {
                 </div>
                 <div>
                   <label className="label">Social Media</label>
-                  <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
                     {profile?.social_ids?.facebook && (
-                      <span className="badge badge-info">fb: {profile.social_ids.facebook}</span>
+                      <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Facebook size={14} /> {profile.social_ids.facebook}
+                      </span>
                     )}
                     {profile?.social_ids?.instagram && (
-                      <span className="badge badge-info">ig: {profile.social_ids.instagram}</span>
+                      <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Instagram size={14} /> {profile.social_ids.instagram}
+                      </span>
                     )}
-                    {!profile?.social_ids?.facebook && !profile?.social_ids?.instagram && <span style={{ color: '#64748b' }}>—</span>}
+                    {profile?.social_ids?.twitter && (
+                      <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Twitter size={14} /> {profile.social_ids.twitter}
+                      </span>
+                    )}
+                    {profile?.social_ids?.whatsapp && (
+                      <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <MessageCircle size={14} /> {profile.social_ids.whatsapp}
+                      </span>
+                    )}
+                    {profile?.social_ids?.youtube && (
+                      <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Youtube size={14} /> {profile.social_ids.youtube}
+                      </span>
+                    )}
+                    {profile?.social_ids?.linkedin && (
+                      <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Linkedin size={14} /> {profile.social_ids.linkedin}
+                      </span>
+                    )}
+                    {!profile?.social_ids?.facebook && !profile?.social_ids?.instagram && !profile?.social_ids?.twitter && !profile?.social_ids?.whatsapp && !profile?.social_ids?.youtube && !profile?.social_ids?.linkedin && (
+                      <span style={{ color: '#64748b' }}>—</span>
+                    )}
                   </div>
                 </div>
               </div>
-            ) : (
-              <VoterProfileEditForm
-                voter={voter}
-                profile={profile}
-                onSave={(updated) => {
-                  setProfile(updated);
-                  setEditing(false);
-                }}
-                onCancel={() => setEditing(false)}
-              />
-            )}
           </div>
         )}
 
@@ -709,6 +759,29 @@ export default function VoterProfile() {
         )}
       </div>
 
+      {showEditModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={() => setShowEditModal(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+          <div style={{ position: 'relative', background: 'white', borderRadius: 16, padding: 28, width: 640, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Edit Profile / प्रोफाइल संपादित करा</h3>
+                <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Update voter contact and profile details</div>
+              </div>
+              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
+            </div>
+            <VoterProfileEditForm
+              voter={voter}
+              profile={profile}
+              onSave={(updated) => {
+                setProfile(updated);
+                setShowEditModal(false);
+              }}
+              onCancel={() => setShowEditModal(false)}
+            />
+          </div>
+        </div>
+      )}
       {showLinkModal && <FamilyLinkModal voter={voter} onClose={onFamilyLinked} />}
       {showNewRequestModal && (
         <NewRequestModal

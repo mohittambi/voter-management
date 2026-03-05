@@ -24,13 +24,23 @@ export default function VoterProfileEditForm({
       voter_id: voter.id,
       dob: formData.get('dob') || null,
       mobile: formData.get('mobile') || null,
+      mobile_secondary: formData.get('mobile_secondary') || null,
       aadhaar_masked: formData.get('aadhaar_masked') || null,
       email: formData.get('email') || null,
       address_marathi: formData.get('address_marathi') || null,
       address_english: formData.get('address_english') || null,
+      education: formData.get('education') || null,
+      occupation: formData.get('occupation') || null,
+      caste_category: formData.get('caste_category') || null,
+      ration_card_type: formData.get('ration_card_type') || null,
+      anniversary_date: formData.get('anniversary_date') || null,
       social_ids: {
         facebook: formData.get('facebook') || null,
         instagram: formData.get('instagram') || null,
+        twitter: formData.get('twitter') || null,
+        whatsapp: formData.get('whatsapp') || null,
+        youtube: formData.get('youtube') || null,
+        linkedin: formData.get('linkedin') || null,
       },
     };
 
@@ -70,6 +80,15 @@ export default function VoterProfileEditForm({
           />
         </div>
         <div>
+          <label className="label">Mobile (Secondary)</label>
+          <input
+            name="mobile_secondary"
+            defaultValue={profile?.mobile_secondary || ''}
+            className="input"
+            placeholder="Alt mobile"
+          />
+        </div>
+        <div>
           <label className="label">Email / ईमेल</label>
           <input
             name="email"
@@ -86,6 +105,55 @@ export default function VoterProfileEditForm({
             defaultValue={profile?.aadhaar_masked || ''}
             className="input"
             placeholder="XXXX-XXXX-1234"
+          />
+        </div>
+        <div style={{ gridColumn: 'span 2' }}>
+          <label className="label">Caste Category / जात वर्ग</label>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 6 }}>
+            {['SC', 'ST', 'OBC', 'Open'].map(opt => (
+              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+                <input type="radio" name="caste_category" value={opt} defaultChecked={profile?.caste_category === opt} />
+                {opt}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div style={{ gridColumn: 'span 2' }}>
+          <label className="label">Ration Card Type / रेशन कार्ड प्रकार</label>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 6 }}>
+            {['White', 'Yellow', 'Orange', 'NA'].map(opt => (
+              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+                <input type="radio" name="ration_card_type" value={opt} defaultChecked={profile?.ration_card_type === opt} />
+                {opt}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="label">Education / शिक्षण</label>
+          <input
+            name="education"
+            defaultValue={profile?.education || ''}
+            className="input"
+            placeholder="e.g. 10th Pass, Graduate"
+          />
+        </div>
+        <div>
+          <label className="label">Occupation / व्यवसाय</label>
+          <input
+            name="occupation"
+            defaultValue={profile?.occupation || ''}
+            className="input"
+            placeholder="e.g. Farmer, Business"
+          />
+        </div>
+        <div>
+          <label className="label">Anniversary Date / वर्धापन दिन</label>
+          <input
+            name="anniversary_date"
+            type="date"
+            defaultValue={profile?.anniversary_date || ''}
+            className="input"
           />
         </div>
         <div style={{ gridColumn: 'span 2' }}>
@@ -126,6 +194,42 @@ export default function VoterProfileEditForm({
             defaultValue={profile?.social_ids?.instagram || ''}
             className="input"
             placeholder="Username"
+          />
+        </div>
+        <div>
+          <label className="label">Twitter / X</label>
+          <input
+            name="twitter"
+            defaultValue={profile?.social_ids?.twitter || ''}
+            className="input"
+            placeholder="Username"
+          />
+        </div>
+        <div>
+          <label className="label">WhatsApp</label>
+          <input
+            name="whatsapp"
+            defaultValue={profile?.social_ids?.whatsapp || ''}
+            className="input"
+            placeholder="Number or username"
+          />
+        </div>
+        <div>
+          <label className="label">YouTube</label>
+          <input
+            name="youtube"
+            defaultValue={profile?.social_ids?.youtube || ''}
+            className="input"
+            placeholder="Channel or username"
+          />
+        </div>
+        <div>
+          <label className="label">LinkedIn</label>
+          <input
+            name="linkedin"
+            defaultValue={profile?.social_ids?.linkedin || ''}
+            className="input"
+            placeholder="Profile URL or username"
           />
         </div>
       </div>

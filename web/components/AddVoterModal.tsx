@@ -29,6 +29,13 @@ export default function AddVoterModal({ onClose, onSuccess }: AddVoterModalProps
     village: '',
     address_marathi: '',
     address_english: '',
+    aadhaar_masked: '',
+    caste_category: '',
+    ration_card_type: '',
+    education: '',
+    occupation: '',
+    anniversary_date: '',
+    social_ids: { facebook: '', instagram: '', twitter: '', whatsapp: '', youtube: '', linkedin: '' },
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -37,10 +44,19 @@ export default function AddVoterModal({ onClose, onSuccess }: AddVoterModalProps
     setSubmitting(true);
     setError('');
     try {
+      const socialIds = form.social_ids
+        ? Object.fromEntries(
+            Object.entries(form.social_ids).filter(([, v]) => v != null && String(v).trim())
+          )
+        : null;
+      const body = {
+        ...form,
+        social_ids: socialIds && Object.keys(socialIds).length ? socialIds : null,
+      };
       const res = await fetch(apiUrl('/api/voters/create'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create voter');
@@ -137,8 +153,61 @@ export default function AddVoterModal({ onClose, onSuccess }: AddVoterModalProps
               <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="email@example.com" />
             </div>
             <div>
+              <label style={labelStyle}>Aadhaar Number / आधार *</label>
+              <input value={form.aadhaar_masked} onChange={e => setForm(f => ({ ...f, aadhaar_masked: e.target.value }))} style={inputStyle} placeholder="XXXX-XXXX-1234" />
+            </div>
+            <div>
               <label style={labelStyle}>Village / गाव</label>
               <input value={form.village} onChange={e => setForm(f => ({ ...f, village: e.target.value }))} style={inputStyle} placeholder="Village" />
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={labelStyle}>Caste Category / जात वर्ग *</label>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 6 }}>
+                {['SC', 'ST', 'OBC', 'Open'].map(opt => (
+                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+                    <input type="radio" name="caste_category" checked={form.caste_category === opt} onChange={() => setForm(f => ({ ...f, caste_category: opt }))} />
+                    {opt}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={labelStyle}>Ration Card Type / रेशन कार्ड प्रकार</label>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 6 }}>
+                {['White', 'Yellow', 'Orange', 'NA'].map(opt => (
+                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+                    <input type="radio" name="ration_card_type" checked={form.ration_card_type === opt} onChange={() => setForm(f => ({ ...f, ration_card_type: opt }))} />
+                    {opt}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Education / शिक्षण *</label>
+              <input value={form.education} onChange={e => setForm(f => ({ ...f, education: e.target.value }))} style={inputStyle} placeholder="e.g. 10th Pass, Graduate" />
+            </div>
+            <div>
+              <label style={labelStyle}>Occupation / व्यवसाय *</label>
+              <input value={form.occupation} onChange={e => setForm(f => ({ ...f, occupation: e.target.value }))} style={inputStyle} placeholder="e.g. Farmer, Business" />
+            </div>
+            <div>
+              <label style={labelStyle}>Anniversary Date / वर्धापन दिन</label>
+              <input type="date" value={form.anniversary_date} onChange={e => setForm(f => ({ ...f, anniversary_date: e.target.value }))} style={inputStyle} />
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={labelStyle}>Social Media IDs</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginTop: 6 }}>
+                {(['facebook', 'instagram', 'twitter', 'whatsapp', 'youtube', 'linkedin'] as const).map(platform => (
+                  <div key={platform}>
+                    <input
+                      value={form.social_ids[platform]}
+                      onChange={e => setForm(f => ({ ...f, social_ids: { ...f.social_ids, [platform]: e.target.value } }))}
+                      style={inputStyle}
+                      placeholder={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
             <div style={{ gridColumn: 'span 2' }}>
               <label style={labelStyle}>Address (Marathi) / पत्ता</label>

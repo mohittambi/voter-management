@@ -26,6 +26,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       address_marathi,
       address_english,
       village,
+      education,
+      occupation,
+      caste_category,
+      ration_card_type,
+      anniversary_date,
+      social_ids,
     } = req.body;
 
     if (!voter_id || typeof voter_id !== 'string' || !voter_id.trim()) {
@@ -77,6 +83,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       address_marathi: address_marathi?.trim() || null,
       address_english: address_english?.trim() || null,
       village: village?.trim() || null,
+      education: education?.trim() || null,
+      occupation: occupation?.trim() || null,
+      caste_category: caste_category?.trim() || null,
+      ration_card_type: ration_card_type?.trim() || null,
+      anniversary_date: anniversary_date || null,
+      social_ids: social_ids || null,
     };
 
     await supabase.from('voter_profiles').upsert(profilePayload, { onConflict: 'voter_id' });

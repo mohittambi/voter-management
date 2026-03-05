@@ -4,7 +4,22 @@ import { getServiceRoleClient } from '../../../lib/supabaseClient';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end();
   try {
-    const { voter_id, dob, mobile, aadhaar_masked, email, address_marathi, address_english, social_ids } = req.body;
+    const {
+      voter_id,
+      dob,
+      mobile,
+      mobile_secondary,
+      aadhaar_masked,
+      email,
+      address_marathi,
+      address_english,
+      social_ids,
+      education,
+      occupation,
+      caste_category,
+      ration_card_type,
+      anniversary_date,
+    } = req.body;
     if (!voter_id) return res.status(400).json({ error: 'voter_id required' });
     const supabase = getServiceRoleClient();
 
@@ -16,11 +31,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           voter_id,
           dob: dob || null,
           mobile: mobile || null,
+          mobile_secondary: mobile_secondary || null,
           aadhaar_masked: aadhaar_masked || null,
           email: email || null,
           address_marathi: address_marathi || null,
           address_english: address_english || null,
           social_ids: social_ids || null,
+          education: education?.trim() || null,
+          occupation: occupation?.trim() || null,
+          caste_category: caste_category?.trim() || null,
+          ration_card_type: ration_card_type?.trim() || null,
+          anniversary_date: anniversary_date || null,
         }],
         { onConflict: 'voter_id' }
       )
