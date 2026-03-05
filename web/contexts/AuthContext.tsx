@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { createClient, User, Session } from '@supabase/supabase-js';
 import { useRouter } from 'next/router';
+import { apiUrl } from '../lib/api';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -56,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(`/api/auth/role?user_id=${userId}`, { signal: controller.signal });
+      const res = await fetch(apiUrl(`/api/auth/role?user_id=${userId}`), { signal: controller.signal });
       clearTimeout(timeout);
       if (res.ok) {
         const data = await res.json();

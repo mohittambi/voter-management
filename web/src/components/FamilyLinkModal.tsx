@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link2, X, Search, RefreshCw, Users } from 'lucide-react';
+import { apiUrl } from '../../lib/api';
 
 export default function FamilyLinkModal({ voter, onClose }: { readonly voter: any; readonly onClose: () => void }) {
   const [q, setQ] = useState('');
@@ -10,7 +11,7 @@ export default function FamilyLinkModal({ voter, onClose }: { readonly voter: an
   async function doSearch() {
     if (!q.trim()) return;
     setSearching(true);
-    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    const res = await fetch(apiUrl(`/api/search?q=${encodeURIComponent(q)}`));
     const data = await res.json();
     setResults(data || []);
     setSearching(false);
@@ -22,7 +23,7 @@ export default function FamilyLinkModal({ voter, onClose }: { readonly voter: an
       member_voter_id: targetId,
       relationship
     };
-    const res = await fetch('/api/family/link', {
+    const res = await fetch(apiUrl('/api/family/link'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)

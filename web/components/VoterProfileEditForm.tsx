@@ -1,4 +1,5 @@
 import { Save } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 interface VoterProfileEditFormProps {
   voter: { id: string };
@@ -33,7 +34,7 @@ export default function VoterProfileEditForm({
       },
     };
 
-    const res = await fetch('/api/profile/update', {
+    const res = await fetch(apiUrl('/api/profile/update'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { colors, VOTER_STATUS_CONFIG } from '../lib/colors';
+import { apiUrl } from '../lib/api';
 import AddVoterModal from '../components/AddVoterModal';
 import { Search, SlidersHorizontal, Upload, X, AlertTriangle, CheckCircle2, Copy, Phone, UserPlus } from 'lucide-react';
 
@@ -91,7 +92,7 @@ function UploadModal({ onClose, onSuccess }: UploadModalProps) {
     const fd = new FormData();
     fd.append('file', file);
     try {
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const res = await fetch(apiUrl('/api/upload'), { method: 'POST', body: fd });
       if (res.ok) {
         const d = await res.json();
         setResult({ imported: d.imported, families: d.families_created || 0 });
@@ -196,7 +197,7 @@ export default function VotersPage() {
       sortDir: overrides.sortDir ?? sortDir,
     });
     try {
-      const res = await fetch(`/api/voters/list?${params}`);
+      const res = await fetch(apiUrl(`/api/voters/list?${params}`));
       if (!res.ok) throw new Error('Failed to load voters');
       const d = await res.json();
       setVoters(d.data || []);

@@ -1,0 +1,6 @@
+# Place this in ~/public_html/.htaccess on the GoDaddy server
+# to serve the Next.js app at https://vedant.info/office/
+# The office/ prefix is preserved so Next.js basePath=/office works correctly.
+
+RewriteEngine On
+RewriteRule ^(office.*)$ http://127.0.0.1:3000/$1 [P,L]

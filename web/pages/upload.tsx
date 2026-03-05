@@ -2,6 +2,7 @@ import { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { Upload, FolderOpen, Loader2, CheckCircle2 } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 export default function UploadPage() {
   const [fileName, setFileName] = useState('');
@@ -21,7 +22,7 @@ export default function UploadPage() {
     formData.append('file', file);
 
     try {
-      const res = await fetch('/api/upload', {
+      const res = await fetch(apiUrl('/api/upload'), {
         method: 'POST',
         body: formData,
       });

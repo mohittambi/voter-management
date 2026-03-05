@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 import VoterProfileEditForm from './VoterProfileEditForm';
 
 interface VoterEditDrawerProps {
@@ -18,7 +19,7 @@ export default function VoterEditDrawer({ voter, open, onClose, onSaved }: Voter
     if (!open || !voter?.id) return;
     setLoading(true);
     setProfile(null);
-    fetch(`/api/voter?id=${voter.id}`)
+    fetch(apiUrl(`/api/voter?id=${voter.id}`))
       .then(r => r.json())
       .then(d => {
         setProfile(d.profile || null);

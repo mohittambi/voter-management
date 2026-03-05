@@ -3,6 +3,7 @@ import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { Cake, List, Calendar as CalendarIcon } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 const VIEW_KEY = 'birthdays_view';
 
@@ -26,7 +27,7 @@ export default function BirthdaysPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    fetch('/api/birthdays')
+    fetch(apiUrl('/api/birthdays'))
       .then(r => r.json())
       .then(d => setData(d || []))
       .finally(() => setLoading(false));

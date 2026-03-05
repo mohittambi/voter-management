@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getAnonClient } from '../lib/supabaseClient';
+import { apiUrl } from '../lib/api';
 import DashboardLayout from '../components/DashboardLayout';
 import { Loader2, AlertTriangle, FolderOpen, FileText, Download } from 'lucide-react';
 
@@ -9,7 +10,7 @@ export default function ImportsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/imports')
+    fetch(apiUrl('/api/imports'))
       .then(r => {
         if (!r.ok) throw new Error('Failed to fetch imports');
         return r.json();

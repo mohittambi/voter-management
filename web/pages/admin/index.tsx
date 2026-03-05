@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import DashboardLayout from '../../components/DashboardLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { colors } from '../../lib/colors';
+import { apiUrl } from '../../lib/api';
 import {
   Plus, Crown, User, Check, Ban, Pencil, Trash2, X, Download, FileText,
   TrendingUp, Wrench, Users, BarChart3, FileDown, Settings2, CheckCircle,
@@ -22,21 +23,21 @@ function UsersTab() {
 
   async function fetchUsers() {
     setLoading(true);
-    const res = await fetch('/api/admin/users');
+    const res = await fetch(apiUrl('/api/admin/users'));
     if (res.ok) setUsers(await res.json());
     setLoading(false);
   }
 
   async function updateRole(userId: string, role: string) {
     setUpdating(userId);
-    await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, role }) });
+    await fetch(apiUrl('/api/admin/users'), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, role }) });
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
     setUpdating(null);
   }
 
   async function toggleActive(userId: string, currentlyActive: boolean) {
     setUpdating(userId);
-    await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, active: !currentlyActive }) });
+    await fetch(apiUrl('/api/admin/users'), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, active: !currentlyActive }) });
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, active: !currentlyActive } : u));
     setUpdating(null);
   }
@@ -137,7 +138,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     e.preventDefault();
     setSubmitting(true); setError('');
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch(apiUrl('/api/admin/users'), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role }),
       });
@@ -201,13 +202,13 @@ function ServicesTab() {
 
   async function fetchServices() {
     setLoading(true);
-    const res = await fetch('/api/services');
+    const res = await fetch(apiUrl('/api/services'));
     if (res.ok) setServices(await res.json());
     setLoading(false);
   }
 
   async function toggleActive(s: any) {
-    await fetch('/api/services', {
+    await fetch(apiUrl('/api/services'), {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: s.id, name: s.name, description: s.description, active: !s.active }),
     });
@@ -216,7 +217,7 @@ function ServicesTab() {
 
   async function deleteService(id: string) {
     if (!confirm('Delete this service type? / हा सेवा प्रकार हटवायचा?')) return;
-    await fetch(`/api/services?id=${id}`, { method: 'DELETE' });
+    await fetch(apiUrl(`/api/services?id=${id}`), { method: 'DELETE' });
     fetchServices();
   }
 
@@ -281,7 +282,7 @@ function ServiceModal({ service, onClose, onSaved }: { service: any; onClose: ()
     e.preventDefault();
     setSubmitting(true); setError('');
     try {
-      const res = await fetch('/api/services', {
+      const res = await fetch(apiUrl('/api/services'), {
         method: service ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: service?.id, name, description, active }),
@@ -336,13 +337,13 @@ function ExportTab() {
   const [downloading, setDownloading] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/imports').then(r => r.json()).then(d => { setImports(Array.isArray(d) ? d : []); setImportsLoading(false); });
+    fetch(apiUrl('/api/imports')).then(r => r.json()).then(d => { setImports(Array.isArray(d) ? d : []); setImportsLoading(false); });
   }, []);
 
   async function exportData(type: 'voters' | 'service_requests') {
     setDownloading(type);
     try {
-      const res = await fetch(`/api/admin/export?type=${type}`);
+      const res = await fetch(apiUrl(`/api/admin/export?type=${type}`));
       if (!res.ok) throw new Error('Export failed');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

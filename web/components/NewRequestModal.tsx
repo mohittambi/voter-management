@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../contexts/AuthContext';
+import { apiUrl } from '../lib/api';
 import { X, Check, Pencil } from 'lucide-react';
 import VoterEditDrawer from './VoterEditDrawer';
 
@@ -35,7 +36,7 @@ export default function NewRequestModal({
   }, [initialVoter]);
 
   useEffect(() => {
-    fetch('/api/services').then(r => r.json()).then(d => setServiceTypes(d.filter((s: any) => s.active)));
+    fetch(apiUrl('/api/services')).then(r => r.json()).then(d => setServiceTypes(d.filter((s: any) => s.active)));
   }, []);
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function NewRequestModal({
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = setTimeout(async () => {
       setSearching(true);
-      const res = await fetch(`/api/search?q=${encodeURIComponent(voterSearch)}`);
+      const res = await fetch(apiUrl(`/api/search?q=${encodeURIComponent(voterSearch)}`));
       const d = await res.json();
       setVoterResults(d.slice(0, 8));
       setSearching(false);
@@ -62,7 +63,7 @@ export default function NewRequestModal({
     setError('');
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/service-requests', {
+      const res = await fetch(apiUrl('/api/service-requests'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify({ voter_id: voter.id, service_type_id: serviceTypeId, notes }),

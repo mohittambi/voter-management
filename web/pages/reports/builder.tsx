@@ -8,6 +8,7 @@ import {
   ClipboardList, Search, ArrowUpDown, Eye, Wrench, Download, Save, FolderOpen,
   Trash2, Plus, X, Loader,
 } from 'lucide-react';
+import { apiUrl } from '../../lib/api';
 
 type Step = 'fields' | 'filters' | 'sort' | 'preview';
 
@@ -38,7 +39,7 @@ export default function ReportBuilder() {
       const token = await getAuthToken();
       if (!token) return;
 
-      const res = await fetch('/api/reports/custom/list', {
+      const res = await fetch(apiUrl('/api/reports/custom/list'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -52,7 +53,7 @@ export default function ReportBuilder() {
 
   async function getAuthToken() {
     // Get the user's session token
-    const session = await fetch('/api/auth/session').then(r => r.json()).catch(() => null);
+    const session = await fetch(apiUrl('/api/auth/session')).then(r => r.json()).catch(() => null);
     return session?.access_token || null;
   }
 
@@ -94,7 +95,7 @@ export default function ReportBuilder() {
 
     try {
       setLoading(true);
-      const res = await fetch('/api/reports/custom/builder', {
+      const res = await fetch(apiUrl('/api/reports/custom/builder'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...config, limit: 10 }),
@@ -130,7 +131,7 @@ export default function ReportBuilder() {
         return;
       }
 
-      const res = await fetch('/api/reports/custom/save', {
+      const res = await fetch(apiUrl('/api/reports/custom/save'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,7 +163,7 @@ export default function ReportBuilder() {
       const token = await getAuthToken();
       if (!token) return;
 
-      const res = await fetch(`/api/reports/custom/run?id=${reportId}`, {
+      const res = await fetch(apiUrl(`/api/reports/custom/run?id=${reportId}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -189,7 +190,7 @@ export default function ReportBuilder() {
       const token = await getAuthToken();
       if (!token) return;
 
-      const res = await fetch(`/api/reports/custom/delete?id=${reportId}`, {
+      const res = await fetch(apiUrl(`/api/reports/custom/delete?id=${reportId}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

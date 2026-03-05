@@ -3,6 +3,7 @@ import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { colors, SR_STATUS_CONFIG } from '../lib/colors';
+import { apiUrl } from '../lib/api';
 import React from 'react';
 import { Users, FileText, Home, UserCheck, MapPin, ClipboardList, User, Plus, Settings, AlertTriangle } from 'lucide-react';
 
@@ -53,7 +54,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/dashboard/stats')
+    fetch(apiUrl('/api/dashboard/stats'))
       .then(r => r.json())
       .then(d => { setStats(d); setLoading(false); })
       .catch(() => { setError('Could not load stats / आकडेवारी लोड करता आली नाही'); setLoading(false); });

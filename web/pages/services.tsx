@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { Wrench, Plus, ClipboardList, Pencil, Trash2, AlertTriangle, Save, Loader } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 interface ServiceType {
   id: string;
@@ -23,7 +24,7 @@ export default function ServicesPage() {
 
   async function fetchServices() {
     try {
-      const res = await fetch('/api/services');
+      const res = await fetch(apiUrl('/api/services'));
       if (res.ok) {
         const data = await res.json();
         setServices(data);
@@ -49,7 +50,7 @@ export default function ServicesPage() {
     if (!confirm('Are you sure you want to delete this service type?')) return;
 
     try {
-      const res = await fetch(`/api/services?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/api/services?id=${id}`), { method: 'DELETE' });
       if (res.ok) {
         await fetchServices();
       } else {
@@ -187,7 +188,7 @@ function ServiceModal({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/services', {
+      const res = await fetch(apiUrl('/api/services'), {
         method: service ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

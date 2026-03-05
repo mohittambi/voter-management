@@ -11,6 +11,7 @@ import {
   User, MapPin, Vote as VoteIcon, Download, Smartphone, Table2, LineChart,
   ChevronUp, ChevronDown, Search,
 } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 type DateRange = {
   start: string;
@@ -35,9 +36,9 @@ export default function ReportsPage() {
   async function fetchStats(range?: DateRange | null) {
     try {
       setLoading(true);
-      let url = '/api/reports/stats';
+      let url = apiUrl('/api/reports/stats');
       if (range) {
-        url += `?start_date=${range.start}&end_date=${range.end}`;
+        url = apiUrl(`/api/reports/stats?start_date=${range.start}&end_date=${range.end}`);
       }
       const res = await fetch(url);
       if (res.ok) {
@@ -64,10 +65,9 @@ export default function ReportsPage() {
   async function fetchWorkerPerformance() {
     try {
       setWorkerLoading(true);
-      let url = '/api/reports/worker-performance';
-      if (dateRange) {
-        url += `?start_date=${dateRange.start}&end_date=${dateRange.end}`;
-      }
+      let url = dateRange
+        ? apiUrl(`/api/reports/worker-performance?start_date=${dateRange.start}&end_date=${dateRange.end}`)
+        : apiUrl('/api/reports/worker-performance');
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -96,11 +96,10 @@ export default function ReportsPage() {
   async function exportReport(type: 'booth' | 'village' | 'status') {
     try {
       setExporting(type);
-      let apiUrl = `/api/reports/export-${type}`;
-      if (dateRange) {
-        apiUrl += `?start_date=${dateRange.start}&end_date=${dateRange.end}`;
-      }
-      const res = await fetch(apiUrl);
+      const exportUrl = dateRange
+        ? apiUrl(`/api/reports/export-${type}?start_date=${dateRange.start}&end_date=${dateRange.end}`)
+        : apiUrl(`/api/reports/export-${type}`);
+      const res = await fetch(exportUrl);
       
       if (!res.ok) {
         throw new Error('Export failed');

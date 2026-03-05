@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { Lock, UserPlus, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -31,7 +32,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/signup', {
+      const res = await fetch(apiUrl('/api/auth/signup'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role })

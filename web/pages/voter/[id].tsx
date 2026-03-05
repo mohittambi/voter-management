@@ -12,6 +12,7 @@ import {
   Briefcase, MapPin, XCircle, Phone, FileText, Clock,
 } from 'lucide-react';
 import { colors, SR_STATUS_CONFIG } from '../../lib/colors';
+import { apiUrl } from '../../lib/api';
 
 type TabType = 'personal' | 'contact' | 'administrative' | 'family' | 'assignment' | 'servicerequests';
 
@@ -35,7 +36,7 @@ export default function VoterProfile() {
     setLoading(true);
     
     // Fetch voter and profile
-    fetch(`/api/voter?id=${id}`)
+    fetch(apiUrl(`/api/voter?id=${id}`))
       .then(r => r.json())
       .then(d => {
         setVoter(d.master || null);
@@ -43,7 +44,7 @@ export default function VoterProfile() {
       });
     
     // Fetch family info
-    fetch(`/api/family/info?voter_id=${id}`)
+    fetch(apiUrl(`/api/family/info?voter_id=${id}`))
       .then(r => r.json())
       .then(d => {
         setFamilyInfo(d);
@@ -54,7 +55,7 @@ export default function VoterProfile() {
 
   function onFamilyLinked() {
     setShowLinkModal(false);
-    fetch(`/api/family/info?voter_id=${id}`)
+    fetch(apiUrl(`/api/family/info?voter_id=${id}`))
       .then(r => r.json())
       .then(d => setFamilyInfo(d));
   }
@@ -62,7 +63,7 @@ export default function VoterProfile() {
   useEffect(() => {
     if (!id) return;
     setSrLoading(true);
-    fetch(`/api/service-requests?voter_id=${id}&pageSize=100`)
+    fetch(apiUrl(`/api/service-requests?voter_id=${id}&pageSize=100`))
       .then(r => r.json())
       .then(d => setServiceRequests(d.data || []))
       .finally(() => setSrLoading(false));
@@ -714,7 +715,7 @@ export default function VoterProfile() {
           onClose={() => setShowNewRequestModal(false)}
           onCreated={() => {
             setShowNewRequestModal(false);
-            fetch(`/api/service-requests?voter_id=${id}&pageSize=100`).then(r => r.json()).then(d => setServiceRequests(d.data || []));
+            fetch(apiUrl(`/api/service-requests?voter_id=${id}&pageSize=100`)).then(r => r.json()).then(d => setServiceRequests(d.data || []));
           }}
           initialVoter={{ id: voter.id, voter_id: voter.voter_id, name_english: voter.name_english || `${voter.first_name || ''} ${voter.surname || ''}`.trim(), first_name: voter.first_name, surname: voter.surname, village: profile?.village }}
           lockVoter={true}

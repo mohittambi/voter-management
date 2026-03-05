@@ -5,6 +5,7 @@ import StatusHistoryModal from '../components/StatusHistoryModal';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../contexts/AuthContext';
 import { colors, SR_STATUS_CONFIG } from '../lib/colors';
+import { apiUrl } from '../lib/api';
 import { X, SlidersHorizontal, Plus, MessageCircle, Clock, AlertTriangle } from 'lucide-react';
 
 const SR_STATUSES = [
@@ -78,7 +79,7 @@ export default function ServiceRequestsPage() {
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    fetch('/api/services').then(r => r.json()).then(d => setServiceTypes(d));
+    fetch(apiUrl('/api/services')).then(r => r.json()).then(d => setServiceTypes(d));
   }, []);
 
   const fetchRequests = useCallback(async (overrides: Record<string, any> = {}) => {
@@ -94,7 +95,7 @@ export default function ServiceRequestsPage() {
       date_to: overrides.date_to ?? dateTo,
     });
     try {
-      const res = await fetch(`/api/service-requests?${params}`);
+      const res = await fetch(apiUrl(`/api/service-requests?${params}`));
       if (!res.ok) throw new Error('Failed to load');
       const d = await res.json();
       setRequests(d.data || []);
@@ -130,7 +131,7 @@ export default function ServiceRequestsPage() {
     setStatusOverlayRequestId(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`/api/service-requests/${requestId}`, {
+      const res = await fetch(apiUrl(`/api/service-requests/${requestId}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify({ status: newStatus }),

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
 import { SlidersHorizontal, Search, Loader2, MapPin, CheckCircle, AlertTriangle, Smartphone } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 export default function SearchPage() {
   const [q, setQ] = useState('');
@@ -22,7 +23,7 @@ export default function SearchPage() {
     if (status) params.append('status', status);
     if (village) params.append('village', village);
     
-    const res = await fetch(`/api/search?${params.toString()}`);
+    const res = await fetch(apiUrl(`/api/search?${params.toString()}`));
     const data = await res.json();
     setResults(data || []);
     setSearching(false);

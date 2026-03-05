@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Check } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 interface AddVoterModalProps {
   onClose: () => void;
@@ -36,7 +37,7 @@ export default function AddVoterModal({ onClose, onSuccess }: AddVoterModalProps
     setSubmitting(true);
     setError('');
     try {
-      const res = await fetch('/api/voters/create', {
+      const res = await fetch(apiUrl('/api/voters/create'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { colors, SR_STATUS_CONFIG } from '../lib/colors';
+import { apiUrl } from '../lib/api';
 
 const STATUS_STYLES = SR_STATUS_CONFIG;
 
@@ -23,7 +24,7 @@ export default function StatusHistoryModal({ requestId, onClose }: StatusHistory
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/service-requests/${requestId}`).then(r => r.json()).then(d => { setData(d); setLoading(false); });
+    fetch(apiUrl(`/api/service-requests/${requestId}`)).then(r => r.json()).then(d => { setData(d); setLoading(false); });
   }, [requestId]);
 
   const logs: any[] = data?.service_request_status_logs || [];
