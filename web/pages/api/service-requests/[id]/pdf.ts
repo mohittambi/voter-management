@@ -301,7 +301,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const fontPath = path.join(
       process.cwd(),
-      'node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff'
+      'public',
+      'fonts',
+      'noto-sans-devanagari-devanagari-400-normal.woff'
     );
     const fontDevanagariBytes = fs.readFileSync(fontPath);
     const fontDevanagari = await pdfDoc.embedFont(fontDevanagariBytes, { subset: true });

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "mkdir -p public/fonts && cp node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff public/fonts/ 2>/dev/null || true",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
