@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Voter ID', 'First Name', 'Middle Name', 'Surname', 'Full Name (English)', 'Full Name (Marathi)',
         'Booth', 'Serial No.', 'Age', 'Gender', 'Caste', 'Assembly Constituency',
         'Mobile', 'Mobile 2', 'Status', 'Village', 'Address (Marathi)',
-        'Worker', 'Worker Mobile', 'Employee', 'Employee ID',
+        'Staff', 'Staff Mobile', 'Employee', 'Employee ID',
       ].join(',');
 
       const rows = (data || []).map((v: any) => {

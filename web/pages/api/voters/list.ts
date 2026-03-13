@@ -15,6 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ageMin = '',
     ageMax = '',
     status = '',
+    familyHead = '',
+    workerId = '',
     sortBy = 'serial_number',
     sortDir = 'asc',
   } = req.query as Record<string, string>;
@@ -59,11 +61,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `, { count: 'exact' });
 
     // Full-text search: name (EN/MR), voter_id, mobile in voter_profiles
+    let mobileVoterIds: string[] = [];
     if (q.trim()) {
       const term = q.trim();
-      query = query.or(
-        `first_name.ilike.%${term}%,surname.ilike.%${term}%,voter_id.ilike.%${term}%,name_marathi.ilike.%${term}%,name_english.ilike.%${term}%,surname_marathi.ilike.%${term}%`
-      );
+      const { data: profileData } = await supabase
+        .from('voter_profiles')
+        .select('voter_id')
+        .or(`mobile.ilike.%${term}%,mobile_secondary.ilike.%${term}%`);
+      mobileVoterIds = (profileData || []).map((p: any) => p.voter_id).filter(Boolean);
+      const orParts = [
+        `first_name.ilike.%${term}%`,
+        `surname.ilike.%${term}%`,
+        `voter_id.ilike.%${term}%`,
+        `name_marathi.ilike.%${term}%`,
+        `name_english.ilike.%${term}%`,
+        `surname_marathi.ilike.%${term}%`,
+      ];
+      if (mobileVoterIds.length > 0) orParts.push(`id.in.(${mobileVoterIds.join(',')})`);
+      query = query.or(orParts.join(','));
     }
 
     if (booth) query = query.eq('booth_number', parseInt(booth));
@@ -71,6 +86,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (caste) query = query.ilike('caste', `%${caste}%`);
     if (ageMin) query = query.gte('age', parseInt(ageMin));
     if (ageMax) query = query.lte('age', parseInt(ageMax));
+
+    // Family head filter: restrict to family heads or members
+    if (familyHead === 'head') {
+      const { data: heads } = await supabase.from('families').select('head_voter_id').not('head_voter_id', 'is', null);
+      const ids = (heads || []).map((h: any) => h.head_voter_id).filter(Boolean);
+      if (ids.length === 0) return res.json({ data: [], total: 0, page: pg, pageSize: ps });
+      query = query.in('id', ids);
+    } else if (familyHead === 'member') {
+      const { data: members } = await supabase.from('family_members').select('voter_id');
+      const ids = (members || []).map((m: any) => m.voter_id).filter(Boolean);
+      if (ids.length === 0) return res.json({ data: [], total: 0, page: pg, pageSize: ps });
+      query = query.in('id', ids);
+    }
 
     // Sort
     query = query.order(col, { ascending: !dir });
@@ -103,17 +131,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         mobile_secondary: profile?.mobile_secondary || '',
         status: profile?.status || 'Active',
         village: profile?.village || '',
+        worker_id: profile?.worker_id || '',
         worker_name: worker?.name || '',
       };
     });
 
-    // Filter by village and status after flatten (Supabase limitation with left join filters)
+    // Filter by village, status, worker after flatten (Supabase limitation with left join filters)
     let filtered = rows;
     if (village.trim()) {
       filtered = filtered.filter(r => r.village.toLowerCase().includes(village.toLowerCase()));
     }
     if (status) {
       filtered = filtered.filter(r => r.status === status);
+    }
+    if (workerId.trim()) {
+      filtered = filtered.filter(r => r.worker_id === workerId.trim());
     }
 
     return res.json({ data: filtered, total: count || 0, page: pg, pageSize: ps });

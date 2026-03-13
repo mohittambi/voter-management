@@ -6,7 +6,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../contexts/AuthContext';
 import { colors, SR_STATUS_CONFIG } from '../lib/colors';
 import { apiUrl } from '../lib/api';
-import { X, SlidersHorizontal, Plus, MessageCircle, Clock, AlertTriangle } from 'lucide-react';
+import { X, SlidersHorizontal, Plus, MessageCircle, Clock, AlertTriangle, FileDown } from 'lucide-react';
 
 const SR_STATUSES = [
   'Document Submitted',
@@ -313,6 +313,10 @@ export default function ServiceRequestsPage() {
                     </td>
                     <td style={{ ...tdStyle, textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button onClick={e => { e.stopPropagation(); window.open(apiUrl(`/api/service-requests/${r.id}/pdf`), '_blank', 'noopener'); }} title="Download PDF" style={{
+                          width: 30, height: 30, borderRadius: 6, background: '#f0fdf4', border: '1px solid #bbf7d0',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}><FileDown size={15} color="#059669" /></button>
                         {r.mobile && (
                           <a href={whatsappUrl(r.mobile, r.voter_name_english, r.service_type_name, r.status)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} title="WhatsApp" style={{
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -345,9 +349,12 @@ export default function ServiceRequestsPage() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                     <StatusBadge status={r.status} onClick={() => { setExpandedRow(r.id); setStatusOverlayRequestId(r.id); setStatusOverlayDraft(r.status); }} />
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <button onClick={e => { e.stopPropagation(); window.open(apiUrl(`/api/service-requests/${r.id}/pdf`), '_blank', 'noopener'); }} title="Download PDF" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}><FileDown size={18} color="#059669" /></button>
                       {r.mobile && (
-                      <a href={whatsappUrl(r.mobile, r.voter_name_english, r.service_type_name, r.status)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}><MessageCircle size={20} color="#16a34a" /></a>
-                    )}
+                        <a href={whatsappUrl(r.mobile, r.voter_name_english, r.service_type_name, r.status)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}><MessageCircle size={20} color="#16a34a" /></a>
+                      )}
+                    </div>
                   </div>
                 </div>
                 {(expandedRow === r.id || statusOverlayRequestId === r.id) && (
@@ -370,9 +377,14 @@ export default function ServiceRequestsPage() {
                         <StatusBadge status={r.status} onClick={() => { setStatusOverlayRequestId(r.id); setStatusOverlayDraft(r.status); }} />
                       )}
                     </div>
-                    <button onClick={() => setHistoryRequestId(r.id)} style={{ width: '100%', padding: '8px', border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', color: '#0369a1', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                      <Clock size={13} /> View History / इतिहास पहा
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      <button onClick={e => { e.stopPropagation(); window.open(apiUrl(`/api/service-requests/${r.id}/pdf`), '_blank', 'noopener'); }} style={{ flex: 1, padding: '8px', border: '1px solid #bbf7d0', borderRadius: 6, background: '#f0fdf4', color: '#059669', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <FileDown size={13} /> PDF
+                      </button>
+                      <button onClick={() => setHistoryRequestId(r.id)} style={{ flex: 1, padding: '8px', border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', color: '#0369a1', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <Clock size={13} /> History
+                      </button>
+                    </div>
                   </div>
                 )}
                 <button onClick={() => setExpandedRow(expandedRow === r.id ? null : r.id)} style={{ marginTop: 8, padding: '4px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: 'none', color: '#64748b', fontSize: 12, cursor: 'pointer' }}>

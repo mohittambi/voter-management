@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { useAuth } from '../contexts/AuthContext';
 import { colors, VOTER_STATUS_CONFIG } from '../lib/colors';
 import { apiUrl } from '../lib/api';
 import AddVoterModal from '../components/AddVoterModal';
-import { Search, SlidersHorizontal, Upload, X, AlertTriangle, CheckCircle2, Copy, Phone, UserPlus } from 'lucide-react';
+import { Search, SlidersHorizontal, Upload, X, AlertTriangle, CheckCircle2, Copy, Phone, UserPlus, Download } from 'lucide-react';
 
 const PAGE_SIZES = [25, 50, 100];
 const STATUS_OPTIONS = ['Active', 'मयत', 'दुबार', 'बेपत्ता'];
@@ -153,6 +154,8 @@ function UploadModal({ onClose, onSuccess }: UploadModalProps) {
 
 export default function VotersPage() {
   const router = useRouter();
+  const { role } = useAuth();
+  const hideAdminColumns = role === 'admin';
   const [voters, setVoters] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -166,6 +169,9 @@ export default function VotersPage() {
   const [ageMin, setAgeMin] = useState('');
   const [ageMax, setAgeMax] = useState('');
   const [status, setStatus] = useState('');
+  const [familyHead, setFamilyHead] = useState('');
+  const [workerId, setWorkerId] = useState('');
+  const [workers, setWorkers] = useState<{ id: string; name: string; mobile?: string }[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
   const [page, setPage] = useState(1);
@@ -178,6 +184,19 @@ export default function VotersPage() {
   const [showAddVoter, setShowAddVoter] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const { view, workerId: qWorkerId } = router.query;
+    if (view === 'staff') setShowFilters(true);
+    if (typeof qWorkerId === 'string' && qWorkerId) setWorkerId(qWorkerId);
+  }, [router.query]);
+
+  useEffect(() => {
+    fetch(apiUrl('/api/workers'))
+      .then(r => r.json())
+      .then(d => setWorkers(Array.isArray(d) ? d : []))
+      .catch(() => setWorkers([]));
+  }, []);
 
   const fetchVoters = useCallback(async (overrides: Record<string, any> = {}) => {
     setLoading(true);
@@ -193,6 +212,8 @@ export default function VotersPage() {
       ageMin: overrides.ageMin ?? ageMin,
       ageMax: overrides.ageMax ?? ageMax,
       status: overrides.status ?? status,
+      familyHead: overrides.familyHead ?? familyHead,
+      workerId: overrides.workerId ?? workerId,
       sortBy: overrides.sortBy ?? sortBy,
       sortDir: overrides.sortDir ?? sortDir,
     });
@@ -207,7 +228,7 @@ export default function VotersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, q, booth, village, gender, caste, ageMin, ageMax, status, sortBy, sortDir]);
+  }, [page, pageSize, q, booth, village, gender, caste, ageMin, ageMax, status, familyHead, workerId, sortBy, sortDir]);
 
   useEffect(() => { fetchVoters(); }, [page, pageSize, sortBy, sortDir]);
 
@@ -219,7 +240,7 @@ export default function VotersPage() {
   function handleFilterChange(key: string, val: string) {
     const map: Record<string, (v: string) => void> = {
       booth: setBooth, village: setVillage, gender: setGender,
-      caste: setCaste, ageMin: setAgeMin, ageMax: setAgeMax, status: setStatus,
+      caste: setCaste, ageMin: setAgeMin, ageMax: setAgeMax, status: setStatus, familyHead: setFamilyHead, workerId: setWorkerId,
     };
     map[key]?.(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -231,9 +252,16 @@ export default function VotersPage() {
 
   function clearFilters() {
     setBooth(''); setVillage(''); setGender(''); setCaste('');
-    setAgeMin(''); setAgeMax(''); setStatus(''); setQ('');
+    setAgeMin(''); setAgeMax(''); setStatus(''); setQ(''); setFamilyHead(''); setWorkerId('');
     setPage(1);
-    fetchVoters({ page: 1, booth: '', village: '', gender: '', caste: '', ageMin: '', ageMax: '', status: '', q: '' });
+    fetchVoters({ page: 1, booth: '', village: '', gender: '', caste: '', ageMin: '', ageMax: '', status: '', familyHead: '', workerId: '', q: '' });
+  }
+
+  function handleExport() {
+    const params = new URLSearchParams({
+      q, booth, village, gender, caste, ageMin, ageMax, status, familyHead, workerId,
+    });
+    window.open(apiUrl(`/api/voters/export?${params}`), '_blank');
   }
 
   function handleSort(col: string) {
@@ -247,7 +275,7 @@ export default function VotersPage() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const hasFilters = !!(q || booth || village || gender || caste || ageMin || ageMax || status);
+  const hasFilters = !!(q || booth || village || gender || caste || ageMin || ageMax || status || familyHead || workerId);
 
   const thStyle: React.CSSProperties = {
     padding: '11px 12px', textAlign: 'left', fontSize: 12, fontWeight: 700,
@@ -281,13 +309,16 @@ export default function VotersPage() {
             background: showFilters ? '#ede9fe' : 'white', color: showFilters ? '#6d28d9' : '#374151',
             fontSize: 14, cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap',
           }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><SlidersHorizontal size={14} /> Filters {hasFilters ? `(${[q, booth, village, gender, caste, ageMin, ageMax, status].filter(Boolean).length})` : ''}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><SlidersHorizontal size={14} /> Filters {hasFilters ? `(${[q, booth, village, gender, caste, ageMin, ageMax, status, familyHead, workerId].filter(Boolean).length})` : ''}</span>
           </button>
           <button onClick={() => setShowAddVoter(true)} className="btn-primary" style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <UserPlus size={14} /> Add Voter
           </button>
           <button onClick={() => setShowUpload(true)} style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none', borderRadius: 8, color: 'white', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Upload size={14} /> Upload
+          </button>
+          <button onClick={handleExport} style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', border: '1px solid #d1d5db', borderRadius: 8, background: 'white', color: '#374151', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Download size={14} /> Export
           </button>
         </div>
 
@@ -326,6 +357,23 @@ export default function VotersPage() {
               <select value={status} onChange={e => handleFilterChange('status', e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, background: 'white' }}>
                 <option value="">All</option>
                 {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Family Head / कुटुंब प्रमुख</label>
+              <select value={familyHead} onChange={e => handleFilterChange('familyHead', e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, background: 'white' }}>
+                <option value="">All</option>
+                <option value="head">Family Heads Only</option>
+                <option value="member">Family Members Only</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Staff / कार्यकर्ता</label>
+              <select value={workerId} onChange={e => handleFilterChange('workerId', e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, background: 'white' }}>
+                <option value="">All</option>
+                {workers.map(w => (
+                  <option key={w.id} value={w.id}>{w.name}{w.mobile ? ` (${w.mobile})` : ''}</option>
+                ))}
               </select>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
@@ -378,18 +426,18 @@ export default function VotersPage() {
                   <th style={thStyle} onClick={() => handleSort('name_marathi')}>नाव (मराठी) <SortIcon col="name_marathi" /></th>
                   <th style={thStyle} onClick={() => handleSort('age')}>Age / Gender <SortIcon col="age" /></th>
                   <th style={thStyle} onClick={() => handleSort('booth_number')}>Booth <SortIcon col="booth_number" /></th>
-                  <th style={thStyle}>Village / गाव</th>
+                  {!hideAdminColumns && <th style={thStyle}>Village / गाव</th>}
                   <th style={thStyle}>Mobile / मोबाईल</th>
-                  <th style={thStyle} onClick={() => handleSort('caste')}>Caste / जात <SortIcon col="caste" /></th>
+                  {!hideAdminColumns && <th style={thStyle} onClick={() => handleSort('caste')}>Caste / जात <SortIcon col="caste" /></th>}
                   <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Worker / कार्यकर्ता</th>
+                  {!hideAdminColumns && <th style={thStyle}>Staff / कार्यकर्ता</th>}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={11} style={{ padding: 0 }}><Skeleton /></td></tr>
+                  <tr><td colSpan={hideAdminColumns ? 8 : 11} style={{ padding: 0 }}><Skeleton /></td></tr>
                 ) : voters.length === 0 ? (
-                  <tr><td colSpan={11} style={{ ...tdStyle, textAlign: 'center', padding: 48, color: '#94a3b8' }}>
+                  <tr><td colSpan={hideAdminColumns ? 8 : 11} style={{ ...tdStyle, textAlign: 'center', padding: 48, color: '#94a3b8' }}>
                     No voters found / कोणतेही मतदार सापडले नाही
                   </td></tr>
                 ) : voters.map((v, i) => (
@@ -411,7 +459,7 @@ export default function VotersPage() {
                     <td style={{ ...tdStyle, fontFamily: 'serif' }}>{v.name_marathi}</td>
                     <td style={tdStyle}>{v.age && <span style={{ fontWeight: 600 }}>{v.age}</span>}{v.age && v.gender && ' / '}{v.gender}</td>
                     <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600 }}>{v.booth_number}</td>
-                    <td style={{ ...tdStyle, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.village}</td>
+                    {!hideAdminColumns && <td style={{ ...tdStyle, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.village}</td>}
                     <td style={tdStyle}>
                       {v.mobile && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: v.mobile_secondary ? 4 : 0 }}>
@@ -428,9 +476,9 @@ export default function VotersPage() {
                         </div>
                       )}
                     </td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{v.caste}</td>
+                    {!hideAdminColumns && <td style={{ ...tdStyle, fontSize: 12 }}>{v.caste}</td>}
                     <td style={tdStyle}><StatusBadge status={v.status} /></td>
-                    <td style={{ ...tdStyle, fontSize: 12, color: '#64748b' }}>{v.worker_name}</td>
+                    {!hideAdminColumns && <td style={{ ...tdStyle, fontSize: 12, color: '#64748b' }}>{v.worker_name}</td>}
                   </tr>
                 ))}
               </tbody>
@@ -463,7 +511,7 @@ export default function VotersPage() {
                     <div><span style={{ color: colors.textDisabled }}>Voter ID: </span><span style={{ fontFamily: 'monospace', fontWeight: 600, color: colors.primary }}>{v.voter_id}</span></div>
                     <div><span style={{ color: '#94a3b8' }}>Age: </span>{v.age} / {v.gender}</div>
                     <div><span style={{ color: '#94a3b8' }}>Caste: </span>{v.caste || '—'}</div>
-                    <div><span style={{ color: '#94a3b8' }}>Worker: </span>{v.worker_name || '—'}</div>
+                    <div><span style={{ color: '#94a3b8' }}>Staff: </span>{v.worker_name || '—'}</div>
                     {v.mobile_secondary && <div><span style={{ color: '#94a3b8' }}>Alt Mobile: </span>{v.mobile_secondary}</div>}
                     <button onClick={() => router.push(`/voter/${v.id}`)} style={{
                       gridColumn: '1/-1', marginTop: 6, padding: '8px', border: '1px solid #2563eb', borderRadius: 6,

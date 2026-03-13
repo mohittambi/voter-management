@@ -69,8 +69,12 @@ export default function NewRequestModal({
         body: JSON.stringify({ voter_id: voter.id, service_type_id: serviceTypeId, notes }),
       });
       if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+      const sr = await res.json();
       onCreated();
       onClose();
+      if (sr?.id) {
+        window.open(apiUrl(`/api/service-requests/${sr.id}/pdf`), '_blank', 'noopener');
+      }
     } catch (e: any) {
       setError(e.message || 'Failed to create request / विनंती तयार करणे अयशस्वी');
     } finally {

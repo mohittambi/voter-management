@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import DashboardLayout from '../../components/DashboardLayout';
 import FamilyLinkModal from '../../src/components/FamilyLinkModal';
+import FamilyMoveModal from '../../src/components/FamilyMoveModal';
 import VoterProfileEditForm from '../../components/VoterProfileEditForm';
 import NewRequestModal from '../../components/NewRequestModal';
 import StatusHistoryModal from '../../components/StatusHistoryModal';
@@ -10,6 +11,7 @@ import {
   User, Smartphone, ClipboardList, Home, HardHat, CreditCard, Vote as VoteIcon,
   CheckCircle, AlertTriangle, Pencil, Plus, Crown, Users, UserCheck,
   Briefcase, MapPin, XCircle, Phone, FileText, Clock, X,
+  ArrowRightLeft, FileDown,
   Facebook, Instagram, Twitter, Youtube, Linkedin, MessageCircle,
 } from 'lucide-react';
 import { colors, SR_STATUS_CONFIG } from '../../lib/colors';
@@ -26,6 +28,8 @@ export default function VoterProfile() {
   const [activeTab, setActiveTab] = useState<TabType>('personal');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [moveModalMember, setMoveModalMember] = useState<any>(null);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const [historyRequestId, setHistoryRequestId] = useState<string | null>(null);
   const [serviceRequests, setServiceRequests] = useState<any[]>([]);
@@ -59,6 +63,19 @@ export default function VoterProfile() {
     fetch(apiUrl(`/api/family/info?voter_id=${id}`))
       .then(r => r.json())
       .then(d => setFamilyInfo(d));
+  }
+
+  function onFamilyMoved() {
+    setShowMoveModal(false);
+    setMoveModalMember(null);
+    fetch(apiUrl(`/api/family/info?voter_id=${id}`))
+      .then(r => r.json())
+      .then(d => setFamilyInfo(d));
+  }
+
+  function openMoveModal(member?: any) {
+    setMoveModalMember(member || null);
+    setShowMoveModal(true);
   }
 
   useEffect(() => {
@@ -489,20 +506,26 @@ export default function VoterProfile() {
                 {familyInfo.members && familyInfo.members.length > 0 ? (
                   <div style={{ display: 'grid', gap: 12 }}>
                     {familyInfo.members.map((member: any) => (
-                      <Link
+                      <div
                         key={member.id}
-                        href={`/voter/${member.id}`}
                         className="card"
                         style={{
                           padding: 16,
-                          textDecoration: 'none',
-                          color: 'inherit',
-                          transition: 'all 0.2s',
-                          cursor: 'pointer',
-                          border: '1px solid #e2e8f0'
+                          border: '1px solid #e2e8f0',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 12,
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Link
+                          href={`/voter/${member.id}`}
+                          style={{
+                            flex: 1,
+                            textDecoration: 'none',
+                            color: 'inherit',
+                          }}
+                        >
                           <div>
                             <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
                               {member.name}
@@ -511,9 +534,26 @@ export default function VoterProfile() {
                               नाते / Relationship: <span className="badge badge-info">{member.relationship_marathi || member.relationship}</span>
                             </p>
                           </div>
-                          <div style={{ color: '#0D47A1', fontSize: 20 }}>→</div>
-                        </div>
-                      </Link>
+                        </Link>
+                        <button
+                          onClick={e => { e.preventDefault(); openMoveModal(member); }}
+                          style={{
+                            padding: '6px 14px',
+                            border: '1px solid #0D47A1',
+                            borderRadius: 8,
+                            background: '#E3F0FF',
+                            color: '#0D47A1',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          <ArrowRightLeft size={12} /> Move
+                        </button>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -527,9 +567,14 @@ export default function VoterProfile() {
 
             {familyInfo?.role === 'member' && familyInfo.head && (
               <div>
-                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
-                  कुटुंब प्रमुख / Family Head
-                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
+                    कुटुंब प्रमुख / Family Head
+                  </h3>
+                  <button onClick={() => openMoveModal()} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: '1px solid #0D47A1', borderRadius: 8, background: '#E3F0FF', color: '#0D47A1', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    <ArrowRightLeft size={14} /> Move to Another Family
+                  </button>
+                </div>
                 <Link
                   href={`/voter/${familyInfo.head.id}`}
                   className="card"
@@ -645,9 +690,14 @@ export default function VoterProfile() {
                             Raised: {new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} · Updated: {new Date(r.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </div>
                         </div>
-                        <button onClick={() => setHistoryRequestId(r.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', color: '#0369a1', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
-                          <Clock size={12} /> History / इतिहास
-                        </button>
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                          <button onClick={() => window.open(apiUrl(`/api/service-requests/${r.id}/pdf`), '_blank', 'noopener')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid #bbf7d0', borderRadius: 6, background: '#f0fdf4', color: '#059669', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                            <FileDown size={12} /> PDF
+                          </button>
+                          <button onClick={() => setHistoryRequestId(r.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', color: '#0369a1', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                            <Clock size={12} /> History / इतिहास
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -667,7 +717,7 @@ export default function VoterProfile() {
               {/* Worker Info */}
               <div className="card" style={{ background: '#E0F2F1', border: '1px solid #80CBC4' }}>
                 <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#00695C', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <UserCheck size={16} /> कार्यकर्ता / Karyakarta (Worker)
+                  <UserCheck size={16} /> कार्यकर्ता / Karayakarta (Non-paid freelance)
                 </h3>
                 {profile?.workers ? (
                   <div style={{ display: 'grid', gap: 12 }}>
@@ -783,6 +833,15 @@ export default function VoterProfile() {
         </div>
       )}
       {showLinkModal && <FamilyLinkModal voter={voter} onClose={onFamilyLinked} />}
+      {showMoveModal && (
+        <FamilyMoveModal
+          voter={moveModalMember || voter}
+          currentHeadName={moveModalMember ? (voter?.name_marathi || `${voter?.first_name || ''} ${voter?.surname || ''}`.trim() || '') : (familyInfo?.head?.name || '')}
+          currentHeadId={moveModalMember ? voter?.id : familyInfo?.head?.id}
+          onClose={() => { setShowMoveModal(false); setMoveModalMember(null); }}
+          onMoved={onFamilyMoved}
+        />
+      )}
       {showNewRequestModal && (
         <NewRequestModal
           onClose={() => setShowNewRequestModal(false)}

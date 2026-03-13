@@ -192,7 +192,7 @@ export default function ReportsPage() {
 
             <div className="card" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white', border: 'none' }}>
               <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><UserCheck size={40} color="rgba(255,255,255,0.9)" /></div>
-              <p style={{ margin: 0, fontSize: 14, opacity: 0.9 }}>कार्यकर्ते / Workers</p>
+              <p style={{ margin: 0, fontSize: 14, opacity: 0.9 }}>कार्यकर्ते / Staff</p>
               <p style={{ margin: '8px 0 0', fontSize: 32, fontWeight: 700 }}>{stats?.totals?.workers || 0}</p>
             </div>
 
@@ -492,14 +492,14 @@ export default function ReportsPage() {
           <div className="card" style={{ marginTop: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <UserCheck size={18} /> कार्यकर्ता कामगिरी / Worker Performance Metrics
+                <UserCheck size={18} /> कार्यकर्ता कामगिरी / Staff Performance Metrics
               </h3>
               <button
                 onClick={toggleWorkerPerformance}
                 className="btn-primary"
                 style={{ padding: '8px 16px', fontSize: 14 }}
               >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{showWorkerPerformance ? <><ChevronUp size={14} /> Hide</> : <><ChevronDown size={14} /> Show Worker Performance</>}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{showWorkerPerformance ? <><ChevronUp size={14} /> Hide</> : <><ChevronDown size={14} /> Show Staff Performance</>}</span>
               </button>
             </div>
 

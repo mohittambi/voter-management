@@ -82,7 +82,7 @@ export default function Dashboard() {
               <StatCard label="Total Voters"          labelMr="एकूण मतदार"       value={stats?.voters?.total ?? 0}    icon={<Users size={22} />}      iconBg={colors.primaryLight} iconColor={colors.primary}   numColor={colors.primary}   link="/voters" />
               <StatCard label="Voter Profiles"        labelMr="मतदार प्रोफाइल"  value={stats?.voters?.profiles ?? 0} icon={<FileText size={22} />}   iconBg="#EDE7F6"             iconColor="#4527A0"          numColor="#4527A0"          link="/voters" />
               <StatCard label="Families"              labelMr="कुटुंबे"          value={stats?.voters?.families ?? 0} icon={<Home size={22} />}       iconBg="#E0F2F1"             iconColor={colors.accent}   numColor={colors.accent}    link="/voters" />
-              <StatCard label="Workers / Karyakartas" labelMr="कार्यकर्ते"      value={stats?.voters?.workers ?? 0}  icon={<UserCheck size={22} />}  iconBg="#E8F5E9"             iconColor={colors.success}   numColor={colors.success}   />
+              <StatCard label="Staff / Karayakartas" labelMr="कार्यकर्ते"      value={stats?.voters?.workers ?? 0}  icon={<UserCheck size={22} />}  iconBg="#E8F5E9"             iconColor={colors.success}   numColor={colors.success}   link="/voters?view=staff" />
               <StatCard label="Villages"              labelMr="गावे"             value={stats?.voters?.villages ?? 0} icon={<MapPin size={22} />}     iconBg="#FFF8E1"             iconColor="#E65100"          numColor="#E65100"          />
             </>)}
           </div>
