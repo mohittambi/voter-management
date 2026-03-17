@@ -30,40 +30,58 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       supabase.from('villages').select('*', { count: 'exact', head: true }),
     ]);
 
-    // Section B: Service request metrics
-    const { count: totalRequests } = await supabase
-      .from('service_requests')
-      .select('*', { count: 'exact', head: true });
-
-    // Status breakdown
-    const { data: srRows } = await supabase
-      .from('service_requests')
-      .select('status');
+    // Section B: Service request metrics — use count queries instead of fetching all rows
+    const [
+      { count: totalRequests },
+      ...statusCounts
+    ] = await Promise.all([
+      supabase.from('service_requests').select('*', { count: 'exact', head: true }),
+      ...SR_STATUSES.map(status =>
+        supabase.from('service_requests').select('*', { count: 'exact', head: true }).eq('status', status)
+      ),
+    ]);
 
     const statusBreakdown: Record<string, number> = {};
-    SR_STATUSES.forEach(s => { statusBreakdown[s] = 0; });
-    (srRows || []).forEach((r: any) => {
-      if (statusBreakdown[r.status] !== undefined) statusBreakdown[r.status]++;
+    SR_STATUSES.forEach((s, i) => {
+      statusBreakdown[s] = statusCounts[i]?.count ?? 0;
     });
 
-    // Unique raisers
-    const uniqueRaisers = new Set((srRows || []).map((r: any) => r.created_by).filter(Boolean)).size;
+    // Unique raisers and top service types — limit to last 90 days to keep query fast
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const since = ninetyDaysAgo.toISOString();
 
-    // Top service types (top 3)
-    const { data: stRows } = await supabase
+    const { data: raiserRows } = await supabase
       .from('service_requests')
-      .select('service_type_id, service_types(name)');
+      .select('created_by')
+      .not('created_by', 'is', null)
+      .gte('created_at', since);
+    const uniqueRaisers = new Set((raiserRows || []).map((r: any) => r.created_by)).size;
 
-    const stCounts: Record<string, { name: string; count: number }> = {};
-    (stRows || []).forEach((r: any) => {
+    const { data: typeIds } = await supabase
+      .from('service_requests')
+      .select('service_type_id')
+      .gte('created_at', since);
+    const typeCounts: Record<string, number> = {};
+    (typeIds || []).forEach((r: any) => {
       const id = r.service_type_id;
-      const name = r.service_types?.name || id;
-      if (!stCounts[id]) stCounts[id] = { name, count: 0 };
-      stCounts[id].count++;
+      typeCounts[id] = (typeCounts[id] || 0) + 1;
     });
-    const topServiceTypes = Object.values(stCounts)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3);
+    const top3Ids = Object.entries(typeCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([id]) => id);
+    const topServiceTypes: { name: string; count: number }[] = [];
+    if (top3Ids.length > 0) {
+      const { data: typeNames } = await supabase
+        .from('service_types')
+        .select('id, name')
+        .in('id', top3Ids);
+      const nameMap = Object.fromEntries((typeNames || []).map((t: any) => [t.id, t.name || t.id]));
+      top3Ids.forEach(id => {
+        topServiceTypes.push({ name: nameMap[id] || id, count: typeCounts[id] || 0 });
+      });
+    }
 
     return res.json({
       voters: {
