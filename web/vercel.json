@@ -9,5 +9,9 @@
     "pages/api/**": {
       "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    { "path": "/api/notifications/daily", "schedule": "0 3 * * *" },
+    { "path": "/api/notifications/advance-status", "schedule": "0 * * * *" }
+  ]
 }

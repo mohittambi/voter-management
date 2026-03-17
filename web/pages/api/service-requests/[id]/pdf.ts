@@ -261,6 +261,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('service_requests')
       .select(`
         id,
+        ticket_number,
         status,
         notes,
         created_at,
@@ -295,6 +296,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const createdDate = sr.created_at ? new Date(sr.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
     const updatedDate = sr.updated_at ? new Date(sr.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
     const notes = sr.notes || '—';
+    const ticketNumber = (sr as any).ticket_number != null ? (sr as any).ticket_number : 0;
+    const ticketDisplay = `SR-${String(ticketNumber).padStart(6, '0')}`;
 
     const pdfDoc = await PDFDocument.create();
     pdfDoc.registerFontkit(fontkit);
@@ -350,7 +353,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       MARGIN,
       y,
       ['Field', 'Value'],
-      [['Request ID', sr.id]],
+      [['Document Tracker Number', ticketDisplay]],
       [colLabel, colValue],
       tableOpts
     );
@@ -455,7 +458,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const pdfBytes = await pdfDoc.save();
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="VedantInfo-ServiceRequest-${sr.id}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="VedantInfo-${ticketDisplay}.pdf"`);
     return res.send(Buffer.from(pdfBytes));
   } catch (err: any) {
     console.error(err);

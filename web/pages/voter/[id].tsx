@@ -11,13 +11,109 @@ import {
   User, Smartphone, ClipboardList, Home, HardHat, CreditCard, Vote as VoteIcon,
   CheckCircle, AlertTriangle, Pencil, Plus, Crown, Users, UserCheck,
   Briefcase, MapPin, XCircle, Phone, FileText, Clock, X,
-  ArrowRightLeft, FileDown,
-  Facebook, Instagram, Twitter, Youtube, Linkedin, MessageCircle,
+  ArrowRightLeft, FileDown, Paperclip, Trash2,
+  Facebook, Instagram, Twitter, Youtube, Linkedin, MessageCircle, ShieldCheck,
 } from 'lucide-react';
+import { supabase } from '../../contexts/AuthContext';
 import { colors, SR_STATUS_CONFIG } from '../../lib/colors';
 import { apiUrl } from '../../lib/api';
 
-type TabType = 'personal' | 'contact' | 'administrative' | 'family' | 'assignment' | 'servicerequests';
+type TabType = 'personal' | 'contact' | 'administrative' | 'family' | 'assignment' | 'servicerequests' | 'documents';
+
+function DocumentsTab({ voterId, documents, loading, onRefresh }: { voterId: string; documents: any[]; loading: boolean; onRefresh: () => void }) {
+  const [uploadType, setUploadType] = useState('Aadhaar Card');
+  const [uploading, setUploading] = useState(false);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const form = new FormData();
+      form.append('file', file);
+      form.append('voter_id', voterId);
+      form.append('document_type', uploadType);
+      const res = await fetch(apiUrl('/api/voter-documents'), {
+        method: 'POST',
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+        body: form,
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      onRefresh();
+      e.target.value = '';
+    } catch (err: any) {
+      alert(err.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDelete(docId: string) {
+    if (!confirm('Delete this document?')) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(apiUrl(`/api/voter-documents/${docId}`), {
+      method: 'DELETE',
+      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+    });
+    if (res.ok) onRefresh();
+    else alert('Delete failed');
+  }
+
+  return (
+    <div>
+      <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Paperclip size={20} /> दस्तऐवज / Documents
+      </h2>
+      <div style={{ marginBottom: 24, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <select value={uploadType} onChange={e => setUploadType(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, background: 'white' }}>
+          <option value="Aadhaar Card">Aadhaar Card</option>
+          <option value="PAN Card">PAN Card</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleUpload} disabled={uploading} style={{ fontSize: 13 }} />
+        {uploading && <span style={{ fontSize: 13, color: '#64748b' }}>Uploading...</span>}
+      </div>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>Loading...</div>
+      ) : documents.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 48, background: '#F5F7FA', borderRadius: 8 }}>
+          <Paperclip size={40} color="#94a3b8" style={{ marginBottom: 12 }} />
+          <p style={{ margin: 0, color: '#64748b', fontSize: 14 }}>No documents uploaded yet</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {documents.map((d: any) => (
+            <div key={d.id} className="card" style={{ padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0' }}>
+              <div>
+                <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: '#e0f2fe', color: '#0369a1', marginRight: 8 }}>{d.document_type}</span>
+                <span style={{ fontSize: 14, fontWeight: 500 }}>{d.file_name || 'Document'}</span>
+                <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>{new Date(d.created_at).toLocaleDateString()}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={async () => {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const res = await fetch(apiUrl(`/api/voter-documents/${d.id}`), { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {} });
+                    if (!res.ok) return;
+                    const { url } = await res.json();
+                    if (url) window.open(url, '_blank');
+                  }}
+                  style={{ padding: '6px 12px', border: '1px solid #bbf7d0', borderRadius: 6, background: '#f0fdf4', color: '#059669', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Download
+                </button>
+                <button onClick={() => handleDelete(d.id)} style={{ padding: '6px 12px', border: '1px solid #fecaca', borderRadius: 6, background: '#fee2e2', color: '#dc2626', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <Trash2 size={12} /> Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function VoterProfile() {
   const router = useRouter();
@@ -34,6 +130,8 @@ export default function VoterProfile() {
   const [historyRequestId, setHistoryRequestId] = useState<string | null>(null);
   const [serviceRequests, setServiceRequests] = useState<any[]>([]);
   const [srLoading, setSrLoading] = useState(false);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -87,6 +185,18 @@ export default function VoterProfile() {
       .finally(() => setSrLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (!id || activeTab !== 'documents') return;
+    setDocsLoading(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      fetch(apiUrl(`/api/voter-documents?voter_id=${id}`), { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {} })
+        .then(r => r.json())
+        .then(d => setDocuments(Array.isArray(d) ? d : []))
+        .catch(() => setDocuments([]))
+        .finally(() => setDocsLoading(false));
+    });
+  }, [id, activeTab]);
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -115,6 +225,7 @@ export default function VoterProfile() {
     { id: 'administrative', label: 'प्रशासकीय / Administrative', icon: <ClipboardList size={17} /> },
     { id: 'family', label: 'कुटुंब / Family', icon: <Home size={17} /> },
     { id: 'assignment', label: 'नियुक्ती / Assignment', icon: <HardHat size={17} /> },
+    { id: 'documents', label: 'दस्तऐवज / Documents', icon: <Paperclip size={17} /> },
     { id: 'servicerequests', label: 'सेवा विनंत्या / Service Requests', icon: <FileText size={17} /> },
   ];
 
@@ -183,11 +294,16 @@ export default function VoterProfile() {
                   {profile.status === 'Active' ? <><CheckCircle size={12} /> Active</> : <><AlertTriangle size={12} /> {profile.status}</>}
                 </span>
               )}
+              {profile?.data_validated && (
+                <span className="badge badge-success" style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <ShieldCheck size={12} /> Validated
+                </span>
+              )}
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {activeTab !== 'family' && (
               <button
                 onClick={() => setShowEditModal(true)}
@@ -197,6 +313,25 @@ export default function VoterProfile() {
                 <Pencil size={14} /> Edit
               </button>
             )}
+            {!profile?.data_validated && (
+              <button
+                onClick={async () => {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  const res = await fetch(apiUrl(`/api/voter-profiles/${id}`), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+                    body: JSON.stringify({ data_validated: true }),
+                  });
+                  if (res.ok) setProfile((p: any) => (p ? { ...p, data_validated: true } : p));
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', border: '1px solid #86efac', borderRadius: 8, background: '#dcfce7', color: '#166534', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                <ShieldCheck size={14} /> Validate Data
+              </button>
+            )}
+            <a href={apiUrl(`/api/voter-profiles/${id}/birthday-pdf`)} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', border: '1px solid #fcd34d', borderRadius: 8, background: '#fef9c3', color: '#92400e', fontSize: 14, fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}>
+              <FileText size={14} /> Birthday Letter / वाढदिवस पत्र
+            </a>
           </div>
         </div>
       </div>
@@ -649,6 +784,22 @@ export default function VoterProfile() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Documents Tab */}
+        {activeTab === 'documents' && (
+          <DocumentsTab
+            voterId={id as string}
+            documents={documents}
+            loading={docsLoading}
+            onRefresh={() => {
+              supabase.auth.getSession().then(({ data: { session } }) => {
+                fetch(apiUrl(`/api/voter-documents?voter_id=${id}`), { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {} })
+                  .then(r => r.json())
+                  .then(d => setDocuments(Array.isArray(d) ? d : []));
+              });
+            }}
+          />
         )}
 
         {/* Service Requests Tab */}

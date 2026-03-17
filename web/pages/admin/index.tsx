@@ -211,7 +211,7 @@ function ServicesTab() {
   async function toggleActive(s: any) {
     await fetch(apiUrl('/api/services'), {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: s.id, name: s.name, description: s.description, active: !s.active }),
+      body: JSON.stringify({ id: s.id, name: s.name, description: s.description, active: !s.active, hours_to_share: s.hours_to_share ?? 10, hours_to_wip: s.hours_to_wip ?? 48 }),
     });
     fetchServices();
   }
@@ -251,6 +251,7 @@ function ServicesTab() {
                 </span>
               </div>
               {s.description && <div style={{ fontSize: 13, color: '#64748b' }}>{s.description}</div>}
+              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>Auto-share: {s.hours_to_share ?? 10}h → Office; WIP: {s.hours_to_wip ?? 48}h</div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
               <button onClick={() => { setEditing(s); setShowModal(true); }} style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -276,6 +277,8 @@ function ServiceModal({ service, onClose, onSaved }: { service: any; onClose: ()
   const [name, setName] = useState(service?.name || '');
   const [description, setDescription] = useState(service?.description || '');
   const [active, setActive] = useState(service?.active !== false);
+  const [hoursToShare, setHoursToShare] = useState(service?.hours_to_share ?? 10);
+  const [hoursToWip, setHoursToWip] = useState(service?.hours_to_wip ?? 48);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -286,7 +289,7 @@ function ServiceModal({ service, onClose, onSaved }: { service: any; onClose: ()
       const res = await fetch(apiUrl('/api/services'), {
         method: service ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: service?.id, name, description, active }),
+        body: JSON.stringify({ id: service?.id, name, description, active, hours_to_share: hoursToShare, hours_to_wip: hoursToWip }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
       onSaved(); onClose();
@@ -314,6 +317,16 @@ function ServiceModal({ service, onClose, onSaved }: { service: any; onClose: ()
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Description / वर्णन</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} style={{ width: '100%', padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, resize: 'vertical', boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ marginBottom: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Hours to Share (Document → Office)</label>
+              <input type="number" min={1} max={168} value={hoursToShare} onChange={e => setHoursToShare(parseInt(e.target.value, 10) || 10)} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Hours to WIP (Office → Work in Progress)</label>
+              <input type="number" min={1} max={720} value={hoursToWip} onChange={e => setHoursToWip(parseInt(e.target.value, 10) || 48)} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
           </div>
           <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
             <input type="checkbox" id="active" checked={active} onChange={e => setActive(e.target.checked)} style={{ width: 16, height: 16 }} />

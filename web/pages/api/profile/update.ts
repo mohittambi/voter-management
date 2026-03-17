@@ -19,6 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       caste_category,
       ration_card_type,
       anniversary_date,
+      worker_id,
+      employee_id,
     } = req.body;
     if (!voter_id) return res.status(400).json({ error: 'voter_id required' });
     const supabase = getServiceRoleClient();
@@ -42,6 +44,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           caste_category: caste_category?.trim() || null,
           ration_card_type: ration_card_type?.trim() || null,
           anniversary_date: anniversary_date || null,
+          worker_id: worker_id || null,
+          employee_id: employee_id || null,
         }],
         { onConflict: 'voter_id' }
       )

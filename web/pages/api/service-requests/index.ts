@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceRoleClient } from '../../../lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
+import { sendWhatsApp, sendSMS } from '../../../lib/messaging';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -117,6 +118,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       changed_by: user.id,
       changed_at: sr.created_at,
     });
+
+    // Notify voter on new service request
+    const ticketDisplay = `SR-${String(sr.ticket_number ?? 0).padStart(6, '0')}`;
+    const [profileRes, serviceTypeRes] = await Promise.all([
+      supabase.from('voter_profiles').select('mobile').eq('voter_id', voter_id).single(),
+      supabase.from('service_types').select('name').eq('id', service_type_id).single(),
+    ]);
+    const voterMobile = profileRes.data?.mobile;
+    const serviceTypeName = serviceTypeRes.data?.name || '';
+    if (voterMobile) {
+      const msg = `नमस्कार, आपल्या "${serviceTypeName}" सेवा विनंतीची नोंद झाली आहे. दस्तऐवज ट्रॅकर क्रमांक: ${ticketDisplay}\nस्थिती: Document Submitted\nधन्यवाद - Vedant Info`;
+      await Promise.all([sendWhatsApp(voterMobile, msg), sendSMS(voterMobile, msg)]);
+    }
 
     return res.status(201).json(sr);
   }

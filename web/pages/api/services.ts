@@ -20,15 +20,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     // Create new service type
-    const { name, description, active = true } = req.body;
+    const { name, description, active = true, hours_to_share, hours_to_wip } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
     }
 
+    const payload: Record<string, unknown> = { name, description, active };
+    if (hours_to_share != null) payload.hours_to_share = parseInt(String(hours_to_share), 10) || 10;
+    if (hours_to_wip != null) payload.hours_to_wip = parseInt(String(hours_to_wip), 10) || 48;
+
     const { data, error } = await supabase
       .from('service_types')
-      .insert({ name, description, active })
+      .insert(payload)
       .select()
       .single();
 
@@ -41,15 +45,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'PUT') {
     // Update service type
-    const { id, name, description, active } = req.body;
+    const { id, name, description, active, hours_to_share, hours_to_wip } = req.body;
 
     if (!id || !name) {
       return res.status(400).json({ error: 'ID and name are required' });
     }
 
+    const payload: Record<string, unknown> = { name, description, active, updated_at: new Date().toISOString() };
+    if (hours_to_share != null) payload.hours_to_share = parseInt(String(hours_to_share), 10) || 10;
+    if (hours_to_wip != null) payload.hours_to_wip = parseInt(String(hours_to_wip), 10) || 48;
+
     const { data, error } = await supabase
       .from('service_types')
-      .update({ name, description, active, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq('id', id)
       .select()
       .single();

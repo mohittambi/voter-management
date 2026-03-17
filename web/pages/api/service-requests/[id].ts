@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceRoleClient } from '../../../lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
+import { sendWhatsApp, sendSMS } from '../../../lib/messaging';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -67,6 +68,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       changed_by: user.id,
       changed_at: new Date().toISOString(),
     });
+
+    // Notify voter on status change
+    const srData = await supabase
+      .from('service_requests')
+      .select('service_types(name), master_voters(voter_profiles(mobile))')
+      .eq('id', id)
+      .single();
+    const mvRaw = srData.data?.master_voters;
+    const mv = Array.isArray(mvRaw) ? mvRaw[0] : mvRaw;
+    const vpRaw = mv?.voter_profiles;
+    const vp = Array.isArray(vpRaw) ? vpRaw[0] : vpRaw;
+    const mobile = vp?.mobile;
+    const stRaw = srData.data?.service_types;
+    const serviceTypeName = (Array.isArray(stRaw) ? stRaw[0] : stRaw)?.name || '';
+    if (mobile) {
+      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'https://office.vedant.info');
+      const ticketDisplay = `SR-${String(updated?.ticket_number ?? 0).padStart(6, '0')}`;
+      const pdfUrl = `${baseUrl}/api/service-requests/${id}/pdf`;
+      const msg =
+        status === 'Work Completed'
+          ? `नमस्कार, आपल्या "${serviceTypeName}" सेवा विनंती पूर्ण झाली आहे. दस्तऐवज ट्रॅकर क्रमांक: ${ticketDisplay}. पूर्णता पत्र डाउनलोड करा: ${pdfUrl}\nधन्यवाद - Vedant Info`
+          : `नमस्कार, आपल्या "${serviceTypeName}" सेवा विनंतीची सद्यस्थिती:\n${status}\nधन्यवाद - Vedant Info`;
+      await Promise.all([sendWhatsApp(mobile, msg), sendSMS(mobile, msg)]);
+    }
 
     return res.json(updated);
   }

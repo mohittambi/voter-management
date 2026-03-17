@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { apiUrl } from '../lib/api';
 
@@ -16,6 +17,14 @@ export default function VoterProfileEditForm({
   onCancel,
   saving = false,
 }: VoterProfileEditFormProps) {
+  const [workers, setWorkers] = useState<{ id: string; name: string; mobile?: string }[]>([]);
+  const [employees, setEmployees] = useState<{ id: string; name: string; employee_id: string }[]>([]);
+
+  useEffect(() => {
+    fetch(apiUrl('/api/workers')).then(r => r.json()).then(d => setWorkers(Array.isArray(d) ? d : []));
+    fetch(apiUrl('/api/admin/employees')).then(r => r.json()).then(d => setEmployees(Array.isArray(d) ? d : []));
+  }, []);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -34,6 +43,8 @@ export default function VoterProfileEditForm({
       caste_category: formData.get('caste_category') || null,
       ration_card_type: formData.get('ration_card_type') || null,
       anniversary_date: formData.get('anniversary_date') || null,
+      worker_id: formData.get('worker_id') || null,
+      employee_id: formData.get('employee_id') || null,
       social_ids: {
         facebook: formData.get('facebook') || null,
         instagram: formData.get('instagram') || null,
@@ -155,6 +166,24 @@ export default function VoterProfileEditForm({
             defaultValue={profile?.anniversary_date || ''}
             className="input"
           />
+        </div>
+        <div>
+          <label className="label">कार्यकर्ता / Party Worker (Karayakarta)</label>
+          <select name="worker_id" className="input" defaultValue={profile?.worker_id ?? ''}>
+            <option value="">None / निवडा</option>
+            {workers.map(w => (
+              <option key={w.id} value={w.id}>{w.name}{w.mobile ? ` · ${w.mobile}` : ''}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label">कर्मचारी / Office Staff (Employee)</label>
+          <select name="employee_id" className="input" defaultValue={profile?.employee_id ?? ''}>
+            <option value="">None / निवडा</option>
+            {employees.map(emp => (
+              <option key={emp.id} value={emp.id}>{emp.name} · {emp.employee_id}</option>
+            ))}
+          </select>
         </div>
         <div style={{ gridColumn: 'span 2' }}>
           <label className="label">Address (Marathi) / पत्ता (मराठी)</label>
