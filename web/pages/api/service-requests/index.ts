@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         created_by,
         voter_id,
         service_type_id,
-        master_voters!inner(id, voter_id, name_english, name_marathi, first_name, surname, voter_profiles(mobile, village)),
+        master_voters!inner(id, voter_id, name_english, name_marathi, first_name, surname, voter_profiles!voter_profiles_voter_id_fkey(mobile, village)),
         service_types(id, name)
       `, { count: 'exact' });
 

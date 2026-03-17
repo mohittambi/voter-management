@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         caste,
         age,
         gender,
-        voter_profiles(mobile, status, village, address_marathi)
+        voter_profiles!voter_profiles_voter_id_fkey(mobile, status, village, address_marathi)
       `);
 
     // Search by text (name, voter_id) on master_voters
@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .select(`
               id, first_name, middle_name, surname, voter_id, name_marathi, name_english,
               surname_marathi, booth_number, caste, age, gender,
-              voter_profiles(mobile, status, village, address_marathi)
+              voter_profiles!voter_profiles_voter_id_fkey(mobile, status, village, address_marathi)
             `)
             .in('id', newIds);
           const profileMap = Object.fromEntries(profileData.map((p: any) => [p.voter_id, p]));

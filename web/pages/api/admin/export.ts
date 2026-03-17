@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select(`
           voter_id, first_name, middle_name, surname, name_english, name_marathi, surname_marathi,
           booth_number, serial_number, age, gender, caste, assembly_constituency,
-          voter_profiles!left(mobile, mobile_secondary, status, village, address_marathi,
+          voter_profiles!voter_profiles_voter_id_fkey(mobile, mobile_secondary, status, village, address_marathi,
             workers(name, mobile), employees(name, employee_id), villages(name, new_gan, new_gat))
         `)
         .order('serial_number', { ascending: true });
@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('service_requests')
         .select(`
           id, status, notes, created_at, updated_at, created_by,
-          master_voters(voter_id, name_english, name_marathi, first_name, surname, voter_profiles(mobile, village)),
+          master_voters(voter_id, name_english, name_marathi, first_name, surname, voter_profiles!voter_profiles_voter_id_fkey(mobile, village)),
           service_types(name)
         `)
         .order('created_at', { ascending: false });

@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get voter profiles with village info
     let query = supabase
       .from('voter_profiles')
-      .select('id, village, village_id, master_voters!inner(created_at, gender, age), villages(new_gan, new_gat)');
+      .select('id, village, village_id, master_voters!voter_profiles_voter_id_fkey!inner(created_at, gender, age), villages(new_gan, new_gat)');
     
     if (start_date) {
       query = query.gte('master_voters.created_at', start_date as string);
@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get family counts per village
     const { data: familyData } = await supabase
       .from('families')
-      .select('id, head_voter_id, voter_profiles!inner(village)');
+      .select('id, head_voter_id, voter_profiles!voter_profiles_voter_id_fkey!inner(village)');
 
     // Aggregate by village
     const villageStats: Record<string, any> = {};

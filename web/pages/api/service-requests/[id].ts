@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('service_requests')
       .select(`
         *,
-        master_voters(id, voter_id, name_english, name_marathi, first_name, surname, voter_profiles(mobile, village)),
+        master_voters(id, voter_id, name_english, name_marathi, first_name, surname, voter_profiles!voter_profiles_voter_id_fkey(mobile, village)),
         service_types(id, name),
         service_request_status_logs(id, status, changed_by, changed_at)
       `)
@@ -72,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Notify voter on status change
     const srData = await supabase
       .from('service_requests')
-      .select('service_types(name), master_voters(voter_profiles(mobile))')
+      .select('service_types(name), master_voters(voter_profiles!voter_profiles_voter_id_fkey(mobile))')
       .eq('id', id)
       .single();
     const mvRaw = srData.data?.master_voters;

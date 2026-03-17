@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const { data: srData } = await supabase
         .from('service_requests')
-        .select('service_types(name), master_voters(voter_profiles(mobile))')
+        .select('service_types(name), master_voters(voter_profiles!voter_profiles_voter_id_fkey(mobile))')
         .eq('id', sr.id)
         .single();
       const mvRaw = srData?.master_voters;
@@ -104,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const { data: srData } = await supabase
         .from('service_requests')
-        .select('service_types(name), master_voters(voter_profiles(mobile))')
+        .select('service_types(name), master_voters(voter_profiles!voter_profiles_voter_id_fkey(mobile))')
         .eq('id', sr.id)
         .single();
       const mvRaw = srData?.master_voters;

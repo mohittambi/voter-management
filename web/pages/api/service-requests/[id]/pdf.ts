@@ -272,7 +272,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           name_marathi,
           first_name,
           surname,
-          voter_profiles(mobile, village)
+          voter_profiles!voter_profiles_voter_id_fkey(mobile, village)
         ),
         service_types(name),
         service_request_status_logs(id, status, changed_at)

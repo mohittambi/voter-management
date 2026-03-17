@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         age,
         gender,
         assembly_constituency,
-        voter_profiles!left(
+        voter_profiles!voter_profiles_voter_id_fkey(
           mobile,
           mobile_secondary,
           status,
