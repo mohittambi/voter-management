@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         dob,
         mobile,
         village,
-        master_voters!inner(id, name_english, name_marathi, first_name, middle_name, surname)
+        master_voters!voter_profiles_voter_id_fkey!inner(id, name_english, name_marathi, first_name, middle_name, surname)
       `)
       .not('dob', 'is', null);
 
