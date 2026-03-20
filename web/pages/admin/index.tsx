@@ -7,7 +7,7 @@ import { apiUrl } from '../../lib/api';
 import {
   Plus, Crown, User, Check, Ban, Pencil, Trash2, X, Download, FileText,
   TrendingUp, Wrench, Users, BarChart3, FileDown, Settings2, CheckCircle,
-  Loader, Briefcase,
+  Loader, Briefcase, GripVertical,
 } from 'lucide-react';
 import { supabase } from '../../contexts/AuthContext';
 
@@ -198,6 +198,9 @@ function ServicesTab() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [orderDirty, setOrderDirty] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
 
   useEffect(() => { fetchServices(); }, []);
 
@@ -222,6 +225,40 @@ function ServicesTab() {
     fetchServices();
   }
 
+  function moveService(fromId: string, toId: string) {
+    if (fromId === toId) return;
+    setServices(prev => {
+      const fromIdx = prev.findIndex(s => s.id === fromId);
+      const toIdx = prev.findIndex(s => s.id === toId);
+      if (fromIdx < 0 || toIdx < 0) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return next;
+    });
+    setOrderDirty(true);
+  }
+
+  async function saveOrder() {
+    if (!orderDirty) return;
+    setSavingOrder(true);
+    try {
+      const order = services.map(s => s.id);
+      const res = await fetch(apiUrl('/api/services'), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Failed to save order');
+      setOrderDirty(false);
+      fetchServices();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save order');
+    } finally {
+      setSavingOrder(false);
+    }
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -229,9 +266,27 @@ function ServicesTab() {
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Service Types</h3>
           <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>सेवा प्रकार व्यवस्थापन</div>
         </div>
-        <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary" style={{ padding: '9px 18px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Plus size={14} /> Add Service / सेवा जोडा
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={saveOrder}
+            disabled={!orderDirty || savingOrder}
+            style={{
+              padding: '9px 14px',
+              borderRadius: 8,
+              border: '1px solid #bfdbfe',
+              background: orderDirty ? '#dbeafe' : '#f8fafc',
+              color: orderDirty ? '#1d4ed8' : '#94a3b8',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: !orderDirty || savingOrder ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {savingOrder ? 'Saving order...' : 'Save Order'}
+          </button>
+          <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary" style={{ padding: '9px 18px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Plus size={14} /> Add Service / सेवा जोडा
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -242,9 +297,25 @@ function ServicesTab() {
             No service types yet. Add one above. / अजून कोणतेही सेवा प्रकार नाहीत.
           </div>
         ) : services.map(s => (
-          <div key={s.id} style={{ background: 'white', borderRadius: 10, padding: '14px 18px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div
+            key={s.id}
+            draggable
+            onDragStart={() => setDraggingId(s.id)}
+            onDragOver={e => e.preventDefault()}
+            onDrop={() => {
+              if (draggingId) {
+                moveService(draggingId, s.id);
+              }
+              setDraggingId(null);
+            }}
+            onDragEnd={() => setDraggingId(null)}
+            style={{ background: 'white', borderRadius: 10, padding: '14px 18px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
+          >
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ color: '#94a3b8', display: 'inline-flex', alignItems: 'center', cursor: 'grab' }} title="Drag to reorder">
+                  <GripVertical size={14} />
+                </span>
                 <span style={{ fontWeight: 700, fontSize: 15 }}>{s.name}</span>
                 <span style={{ padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600, background: s.active ? '#d1fae5' : '#fee2e2', color: s.active ? '#065f46' : '#991b1b' }}>
                   {s.active ? 'Active' : 'Inactive'}

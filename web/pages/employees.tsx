@@ -104,6 +104,12 @@ export default function EmployeesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Employee | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [searchByEmployee, setSearchByEmployee] = useState<Record<string, string>>({});
+  const [resultsByEmployee, setResultsByEmployee] = useState<Record<string, any[]>>({});
+  const [selectedByEmployee, setSelectedByEmployee] = useState<Record<string, any[]>>({});
+  const [savingEmployeeId, setSavingEmployeeId] = useState<string | null>(null);
+  const [savingActionByEmployee, setSavingActionByEmployee] = useState<Record<string, 'assign' | 'remove' | undefined>>({});
+  const [removingVoterId, setRemovingVoterId] = useState<string | null>(null);
 
   async function fetchEmployees() {
     setLoading(true);
@@ -128,6 +134,67 @@ export default function EmployeesPage() {
     else alert('Delete failed / हटवणे अयशस्वी');
   }
 
+  async function searchVoters(employeeId: string, q: string) {
+    setSearchByEmployee(prev => ({ ...prev, [employeeId]: q }));
+    if (!q.trim() || q.trim().length < 2) {
+      setResultsByEmployee(prev => ({ ...prev, [employeeId]: [] }));
+      return;
+    }
+    const res = await fetch(apiUrl(`/api/search?q=${encodeURIComponent(q.trim())}`));
+    const data = await res.json();
+    setResultsByEmployee(prev => ({ ...prev, [employeeId]: Array.isArray(data) ? data.slice(0, 8) : [] }));
+  }
+
+  async function patchAssignment(voterId: string, payload: { employee_id?: string | null }) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    const res = await fetch(apiUrl('/api/assignments'), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ voter_id: voterId, ...payload }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Assignment update failed');
+  }
+
+  function toggleCandidate(employeeId: string, candidate: any) {
+    setSelectedByEmployee(prev => {
+      const selected = prev[employeeId] || [];
+      const exists = selected.some((s: any) => s.id === candidate.id);
+      if (exists) {
+        return { ...prev, [employeeId]: selected.filter((s: any) => s.id !== candidate.id) };
+      }
+      return { ...prev, [employeeId]: [...selected, candidate] };
+    });
+  }
+
+  async function assignSelected(employeeId: string) {
+    const selected = selectedByEmployee[employeeId] || [];
+    if (selected.length === 0) return;
+    const ok = confirm(`Assign ${selected.length} selected voter(s) to this employee?`);
+    if (!ok) return;
+
+    try {
+      setSavingEmployeeId(employeeId);
+      setSavingActionByEmployee(prev => ({ ...prev, [employeeId]: 'assign' }));
+      for (const candidate of selected) {
+        await patchAssignment(candidate.id, { employee_id: employeeId });
+      }
+      setSelectedByEmployee(prev => ({ ...prev, [employeeId]: [] }));
+      setSearchByEmployee(prev => ({ ...prev, [employeeId]: '' }));
+      setResultsByEmployee(prev => ({ ...prev, [employeeId]: [] }));
+      await fetchEmployees();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to assign selected voters');
+    } finally {
+      setSavingEmployeeId(null);
+      setSavingActionByEmployee(prev => ({ ...prev, [employeeId]: undefined }));
+    }
+  }
+
   return (
     <ProtectedRoute allowedRoles={['admin']}>
       <DashboardLayout>
@@ -135,73 +202,116 @@ export default function EmployeesPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <div>
               <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Employees / कर्मचारी</h3>
-              <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>Karamchari CRUD - paid staff</div>
+              <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>Karamchari CRUD - paid staff / कर्मचारी व्यवस्थापन</div>
             </div>
             <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary" style={{ padding: '9px 18px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <Plus size={14} /> Add Employee / कर्मचारी जोडा
             </button>
           </div>
 
-          <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            {loading ? (
-              <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Loading... / लोड होत आहे...</div>
-            ) : employees.length === 0 ? (
-              <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>No employees yet. Add one above. / अजून कोणतेही कर्मचारी नाहीत.</div>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={{ padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Name / नाव</th>
-                    <th style={{ padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Employee ID</th>
-                    <th style={{ padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Assigned Voters</th>
-                    <th style={{ padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Actions / क्रिया</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((emp, i) => (
-                    <tr key={emp.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                      <td style={{ padding: '11px 14px', fontSize: 13, fontWeight: 600 }}>{emp.name}</td>
-                      <td style={{ padding: '11px 14px', fontSize: 13, fontFamily: 'monospace' }}>{emp.employee_id}</td>
-                      <td style={{ padding: '11px 14px', fontSize: 13, color: '#1d4ed8', fontWeight: 700 }}>{emp.assigned_count ?? 0}</td>
-                      <td style={{ padding: '11px 14px' }}>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button onClick={() => { setEditing(emp); setShowModal(true); }} style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <Pencil size={12} /> Edit
-                          </button>
-                          <button onClick={() => deleteEmployee(emp.id)} style={{ padding: '6px 12px', border: '1px solid #fecaca', borderRadius: 6, background: '#fee2e2', color: '#991b1b', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <Trash2 size={12} /> Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
           <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {employees.map(emp => {
+            {loading ? (
+              <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e2e8f0', padding: 40, textAlign: 'center', color: '#94a3b8' }}>
+                Loading... / लोड होत आहे...
+              </div>
+            ) : employees.length === 0 ? (
+              <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e2e8f0', padding: 40, textAlign: 'center', color: '#94a3b8' }}>
+                No employees yet. Add one above. / अजून कोणतेही कर्मचारी नाहीत.
+              </div>
+            ) : employees.map(emp => {
               const voters = emp.voters || [];
               const isOpen = !!expanded[emp.id];
+              const selectedCandidates = selectedByEmployee[emp.id] || [];
               return (
                 <div key={`map-${emp.id}`} style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
                   <div style={{ padding: '12px 14px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
                       {emp.name} <span style={{ fontFamily: 'monospace', fontWeight: 500, color: '#64748b' }}>({emp.employee_id})</span>
+                      <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 999, padding: '2px 8px' }}>
+                        {emp.assigned_count ?? voters.length} assigned
+                      </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setExpanded(prev => ({ ...prev, [emp.id]: !isOpen }))}
-                      style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
-                    >
-                      {isOpen ? 'Hide Mapping' : `Show Mapping (${voters.length})`}
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => { setEditing(emp); setShowModal(true); }}
+                        style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Pencil size={12} /> Edit / संपादन
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteEmployee(emp.id)}
+                        style={{ padding: '6px 10px', border: '1px solid #fecaca', borderRadius: 6, background: '#fee2e2', color: '#991b1b', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Trash2 size={12} /> Delete / हटवा
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExpanded(prev => ({ ...prev, [emp.id]: !isOpen }))}
+                        style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                      >
+                        {isOpen ? 'Hide Mapping / सूची लपवा' : `Show Mapping / सूची दाखवा (${voters.length})`}
+                      </button>
+                    </div>
                   </div>
                   {isOpen && (
                     <div>
+                      <div style={{ padding: '12px 14px', borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
+                        <label htmlFor={`employee-voter-search-${emp.id}`} style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Assign voter to this employee / या कर्मचारीस मतदार जोडा</label>
+                        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>
+                          Search and select multiple voters, then click Assign Selected. / एकापेक्षा जास्त मतदार निवडा आणि Assign Selected करा.
+                        </div>
+                        <input
+                          id={`employee-voter-search-${emp.id}`}
+                          value={searchByEmployee[emp.id] || ''}
+                          onChange={e => searchVoters(emp.id, e.target.value)}
+                          placeholder="Search voter by name, EPIC or mobile..."
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, boxSizing: 'border-box' }}
+                        />
+                        {(resultsByEmployee[emp.id] || []).length > 0 && (
+                          <div style={{ marginTop: 8, border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', maxHeight: 220, overflowY: 'auto' }}>
+                            {(resultsByEmployee[emp.id] || []).map((candidate: any) => (
+                              <div
+                                key={`${emp.id}-${candidate.id}`}
+                                style={{ display: 'flex', alignItems: 'flex-start', gap: 8, width: '100%', textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #f1f5f9', background: 'white', cursor: 'pointer', fontSize: 13 }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCandidates.some((s: any) => s.id === candidate.id)}
+                                  onChange={() => toggleCandidate(emp.id, candidate)}
+                                  disabled={savingEmployeeId === emp.id}
+                                  aria-label={`Select voter ${candidate.name_english || `${candidate.first_name || ''} ${candidate.surname || ''}`.trim()}`}
+                                  style={{ marginTop: 2 }}
+                                />
+                                <div>
+                                  <div style={{ fontWeight: 600 }}>{candidate.name_english || `${candidate.first_name || ''} ${candidate.surname || ''}`.trim()}</div>
+                                  <div style={{ color: '#64748b', fontSize: 12 }}>{candidate.voter_id || '—'} · {candidate.mobile || 'No mobile'}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {(searchByEmployee[emp.id] || '').trim().length >= 2 && (resultsByEmployee[emp.id] || []).length === 0 && (
+                          <div style={{ marginTop: 8, fontSize: 12, color: '#94a3b8' }}>No matching voters found / जुळणारे मतदार आढळले नाहीत.</div>
+                        )}
+                        {selectedCandidates.length > 0 && (
+                          <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <div style={{ fontSize: 12, color: '#334155' }}>{selectedCandidates.length} voter(s) selected / मतदार निवडले</div>
+                            <button
+                              type="button"
+                              onClick={() => assignSelected(emp.id)}
+                              disabled={savingEmployeeId === emp.id}
+                              className="btn-primary"
+                              style={{ padding: '6px 10px', fontSize: 12 }}
+                            >
+                              {savingEmployeeId === emp.id && savingActionByEmployee[emp.id] === 'assign' ? 'Assigning... / जोडले जात आहे' : 'Assign Selected / निवडलेले जोडा'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       {voters.length === 0 ? (
-                        <div style={{ padding: 14, fontSize: 13, color: '#94a3b8' }}>No voters assigned.</div>
+                        <div style={{ padding: 14, fontSize: 13, color: '#94a3b8' }}>No voters assigned / मतदार जोडलेले नाहीत.</div>
                       ) : (
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                           <thead>
@@ -210,6 +320,7 @@ export default function EmployeesPage() {
                               <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>EPIC</th>
                               <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>Mobile</th>
                               <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>Village</th>
+                              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -221,6 +332,32 @@ export default function EmployeesPage() {
                                 <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', color: '#334155' }}>{voter.voter_id || '—'}</td>
                                 <td style={{ padding: '10px 14px', fontSize: 13, color: '#334155' }}>{voter.mobile || '—'}</td>
                                 <td style={{ padding: '10px 14px', fontSize: 13, color: '#334155' }}>{voter.village || '—'}</td>
+                                <td style={{ padding: '10px 14px' }}>
+                                  <button
+                                    type="button"
+                                    disabled={savingEmployeeId === emp.id}
+                                    onClick={async () => {
+                                      const ok = confirm('Remove this voter from this employee? / या कर्मचारीमधून हा मतदार काढायचा का?');
+                                      if (!ok) return;
+                                      try {
+                                        setSavingEmployeeId(emp.id);
+                                        setSavingActionByEmployee(prev => ({ ...prev, [emp.id]: 'remove' }));
+                                        setRemovingVoterId(voter.id);
+                                        await patchAssignment(voter.id, { employee_id: null });
+                                        await fetchEmployees();
+                                      } catch (err: any) {
+                                        alert(err?.message || 'Failed to remove voter mapping');
+                                      } finally {
+                                        setSavingEmployeeId(null);
+                                        setSavingActionByEmployee(prev => ({ ...prev, [emp.id]: undefined }));
+                                        setRemovingVoterId(null);
+                                      }
+                                    }}
+                                    style={{ padding: '5px 10px', border: '1px solid #fecaca', borderRadius: 6, background: '#fee2e2', color: '#991b1b', fontSize: 12, cursor: 'pointer' }}
+                                  >
+                                    {savingEmployeeId === emp.id && savingActionByEmployee[emp.id] === 'remove' && removingVoterId === voter.id ? 'Removing... / काढले जात आहे' : 'Remove / काढा'}
+                                  </button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
