@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -9,6 +10,16 @@ type Employee = {
   id: string;
   name: string;
   employee_id: string;
+  assigned_count?: number;
+  voters?: AssignedVoter[];
+};
+
+type AssignedVoter = {
+  id: string;
+  voter_id: string;
+  name: string;
+  mobile?: string | null;
+  village?: string | null;
 };
 
 function EmployeeModal({
@@ -92,10 +103,11 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Employee | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   async function fetchEmployees() {
     setLoading(true);
-    const res = await fetch(apiUrl('/api/admin/employees'));
+    const res = await fetch(apiUrl('/api/admin/employees?view=mapping'));
     if (res.ok) setEmployees(await res.json());
     setLoading(false);
   }
@@ -141,6 +153,7 @@ export default function EmployeesPage() {
                   <tr>
                     <th style={{ padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Name / नाव</th>
                     <th style={{ padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Employee ID</th>
+                    <th style={{ padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Assigned Voters</th>
                     <th style={{ padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Actions / क्रिया</th>
                   </tr>
                 </thead>
@@ -149,6 +162,7 @@ export default function EmployeesPage() {
                     <tr key={emp.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
                       <td style={{ padding: '11px 14px', fontSize: 13, fontWeight: 600 }}>{emp.name}</td>
                       <td style={{ padding: '11px 14px', fontSize: 13, fontFamily: 'monospace' }}>{emp.employee_id}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 13, color: '#1d4ed8', fontWeight: 700 }}>{emp.assigned_count ?? 0}</td>
                       <td style={{ padding: '11px 14px' }}>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <button onClick={() => { setEditing(emp); setShowModal(true); }} style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -164,6 +178,59 @@ export default function EmployeesPage() {
                 </tbody>
               </table>
             )}
+          </div>
+
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {employees.map(emp => {
+              const voters = emp.voters || [];
+              const isOpen = !!expanded[emp.id];
+              return (
+                <div key={`map-${emp.id}`} style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 14px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
+                      {emp.name} <span style={{ fontFamily: 'monospace', fontWeight: 500, color: '#64748b' }}>({emp.employee_id})</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(prev => ({ ...prev, [emp.id]: !isOpen }))}
+                      style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                    >
+                      {isOpen ? 'Hide Mapping' : `Show Mapping (${voters.length})`}
+                    </button>
+                  </div>
+                  {isOpen && (
+                    <div>
+                      {voters.length === 0 ? (
+                        <div style={{ padding: 14, fontSize: 13, color: '#94a3b8' }}>No voters assigned.</div>
+                      ) : (
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr>
+                              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>Voter</th>
+                              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>EPIC</th>
+                              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>Mobile</th>
+                              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>Village</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {voters.map((voter, idx) => (
+                              <tr key={`${emp.id}-${voter.id}-${idx}`} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                                <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600 }}>
+                                  <Link href={`/voter/${voter.id}`} style={{ color: '#0f172a', textDecoration: 'none' }}>{voter.name || 'Unnamed voter'}</Link>
+                                </td>
+                                <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', color: '#334155' }}>{voter.voter_id || '—'}</td>
+                                <td style={{ padding: '10px 14px', fontSize: 13, color: '#334155' }}>{voter.mobile || '—'}</td>
+                                <td style={{ padding: '10px 14px', fontSize: 13, color: '#334155' }}>{voter.village || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 

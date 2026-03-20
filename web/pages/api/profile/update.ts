@@ -24,6 +24,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } = req.body;
     if (!voter_id) return res.status(400).json({ error: 'voter_id required' });
     const supabase = getServiceRoleClient();
+    const normalizedWorkerId = worker_id || null;
+    const normalizedEmployeeId = employee_id || null;
+
+    if (normalizedWorkerId) {
+      const { data: worker, error: workerErr } = await supabase
+        .from('workers')
+        .select('id')
+        .eq('id', normalizedWorkerId)
+        .maybeSingle();
+      if (workerErr) return res.status(500).json({ error: workerErr.message });
+      if (!worker) return res.status(400).json({ error: 'Invalid worker_id' });
+    }
+
+    if (normalizedEmployeeId) {
+      const { data: employee, error: employeeErr } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('id', normalizedEmployeeId)
+        .maybeSingle();
+      if (employeeErr) return res.status(500).json({ error: employeeErr.message });
+      if (!employee) return res.status(400).json({ error: 'Invalid employee_id' });
+    }
 
     // upsert into voter_profiles by voter_id
     const { data, error } = await supabase
@@ -44,8 +66,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           caste_category: caste_category?.trim() || null,
           ration_card_type: ration_card_type?.trim() || null,
           anniversary_date: anniversary_date || null,
-          worker_id: worker_id || null,
-          employee_id: employee_id || null,
+          worker_id: normalizedWorkerId,
+          employee_id: normalizedEmployeeId,
         }],
         { onConflict: 'voter_id' }
       )
