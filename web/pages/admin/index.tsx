@@ -611,7 +611,19 @@ const TABS: { id: AdminTab; label: string; labelMr: string; icon: React.ReactNod
 ];
 
 export default function AdminPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    const qTab = router.query.tab;
+    const tab = Array.isArray(qTab) ? qTab[0] : qTab;
+    if (tab === 'employees') setActiveTab('employees');
+    else if (tab === 'users') setActiveTab('users');
+    else if (tab === 'reports') setActiveTab('reports');
+    else if (tab === 'export') setActiveTab('export');
+    else if (tab === 'services') setActiveTab('services');
+  }, [router.isReady, router.query.tab]);
 
   return (
     <ProtectedRoute allowedRoles={['admin']}>
