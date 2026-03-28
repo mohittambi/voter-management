@@ -34,6 +34,16 @@ function normaliseMobile(mobile: string): string {
   return digits;
 }
 
+function toWay2SmartRecipient(mobile: string): string {
+  // Way2Smart accepts E.164 format in all tested requests.
+  return mobile.startsWith('+') ? mobile : `+${mobile}`;
+}
+
+function sanitiseTemplateParam(text: string): string {
+  // Keep payload variables compact and avoid line-break validation issues.
+  return text.replaceAll(/\s+/g, ' ').trim();
+}
+
 function templateNameForEvent(event: WhatsAppEvent): string | undefined {
   const envKey = EVENT_TEMPLATE_ENV_KEYS[event];
   const name = process.env[envKey]?.trim();
@@ -60,6 +70,7 @@ export async function sendWhatsApp(mobile: string, options: SendWhatsAppOptions)
   }
 
   const phone = normaliseMobile(mobile);
+  const recipient = toWay2SmartRecipient(phone);
   const lang = (options.languageCode || WAY2SMART_TEMPLATE_LANG).trim();
 
   const components =
@@ -69,7 +80,7 @@ export async function sendWhatsApp(mobile: string, options: SendWhatsAppOptions)
             type: 'body' as const,
             parameters: options.bodyParams.map((text) => ({
               type: 'text' as const,
-              text,
+              text: sanitiseTemplateParam(text),
             })),
           },
         ]
@@ -78,7 +89,7 @@ export async function sendWhatsApp(mobile: string, options: SendWhatsAppOptions)
   const payload: Record<string, unknown> = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    to: phone,
+    to: recipient,
     type: 'template',
     template: {
       name: templateName,

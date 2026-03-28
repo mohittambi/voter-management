@@ -59,8 +59,7 @@ function ensureCanvasFont(fontPath: string): void {
  * Renders Devanagari lines with correct shaping (Skia). pdf-lib drawText is unreliable for Indic scripts.
  */
 function renderGreetingPng(
-  line1: string,
-  line2: string | null,
+  lines: string[],
   fontPath: string,
   canvasFontPx: number,
   lineHeightCanvasPx: number
@@ -74,17 +73,15 @@ function renderGreetingPng(
   const probe = createCanvas(8, 8).getContext('2d');
   probe.font = `bold ${canvasFontPx}px ${CANVAS_FONT_FAMILY}`;
 
-  const w1 = probe.measureText(line1).width;
-  const w2 = line2 ? probe.measureText(line2).width : 0;
-  const textW = Math.ceil(Math.max(w1, w2));
-  const canvasW = Math.max(64, textW + padX * 2);
+  let textW = 0;
+  for (const line of lines) {
+    textW = Math.max(textW, probe.measureText(line).width);
+  }
+  const canvasW = Math.max(64, Math.ceil(textW + padX * 2));
 
-  const lines = line2 ? 2 : 1;
+  const n = lines.length;
   const firstBaselineY = padTop + canvasFontPx;
-  const secondBaselineY = firstBaselineY + lineHeightCanvasPx;
-  const canvasH = Math.ceil(
-    lines === 2 ? secondBaselineY + padBottom : firstBaselineY + padBottom
-  );
+  const canvasH = Math.ceil(firstBaselineY + (n - 1) * lineHeightCanvasPx + padBottom);
 
   const canvas = createCanvas(canvasW, canvasH);
   const ctx = canvas.getContext('2d');
@@ -92,10 +89,9 @@ function renderGreetingPng(
   ctx.fillStyle = '#1a1a26';
   ctx.textBaseline = 'alphabetic';
 
-  ctx.fillText(line1, padX, firstBaselineY);
-  if (line2) {
-    ctx.fillText(line2, padX, secondBaselineY);
-  }
+  lines.forEach((line, i) => {
+    ctx.fillText(line, padX, firstBaselineY + i * lineHeightCanvasPx);
+  });
 
   return canvas.toBuffer('image/png');
 }
@@ -148,14 +144,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [(voter as any).first_name, (voter as any).middle_name, (voter as any).surname].filter(Boolean).join(' ') ||
       'Friend';
 
-    const canvasFontPx = parseCoord(process.env.BIRTHDAY_GREETING_CANVAS_PX, 28);
+    /** Default ~34px canvas → ~17pt on page at 0.5 scale; closer to letterhead body weight. */
+    const canvasFontPx = parseCoord(process.env.BIRTHDAY_GREETING_CANVAS_PX, 34);
     const lineHeightCanvasPx = parseCoord(
       process.env.BIRTHDAY_GREETING_CANVAS_LINE_PX,
       Math.round(canvasFontPx * 1.35)
     );
 
-    const line1 = `प्रति, ${nameMr}`;
-    const pngBuffer = renderGreetingPng(line1, village || null, fontPath, canvasFontPx, lineHeightCanvasPx);
+    const greetingLines = ['प्रति,', nameMr];
+    if (village) greetingLines.push(village);
+    const pngBuffer = renderGreetingPng(greetingLines, fontPath, canvasFontPx, lineHeightCanvasPx);
 
     const templateBytes = fs.readFileSync(templatePath);
     const templateDoc = await PDFDocument.load(templateBytes);

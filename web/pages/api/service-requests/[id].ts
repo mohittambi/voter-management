@@ -96,6 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const vpRaw = mv?.voter_profiles;
     const vp = Array.isArray(vpRaw) ? vpRaw[0] : vpRaw;
     const mobile = vp?.mobile;
+    console.log('[service-request PATCH] voter mobile lookup:', { id, status, mobile: mobile || null, srDataError: srData.error });
     if (mobile) {
       const ticketDisplay = `VED-${String(updated?.ticket_number ?? 0).padStart(6, '0')}`;
       const msg = buildStatusNotification(status, ticketDisplay);
