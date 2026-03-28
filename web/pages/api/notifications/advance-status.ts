@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // 1) Advance Document Submitted → Document Shared to Office (after hours_to_share)
   const { data: submittedList } = await supabase
     .from('service_requests')
-    .select('id, service_type_id, service_types(hours_to_share)')
+    .select('id, ticket_number, service_type_id, service_types(hours_to_share)')
     .eq('status', STATUS_DOCUMENT_SUBMITTED);
 
   for (const sr of submittedList || []) {
@@ -63,11 +63,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const vpRaw = mv?.voter_profiles;
       const vp = Array.isArray(vpRaw) ? vpRaw[0] : vpRaw;
       const mobile = vp?.mobile;
-      const stRaw = srData?.service_types;
-      const serviceTypeName = (Array.isArray(stRaw) ? stRaw[0] : stRaw)?.name || '';
       if (mobile) {
-        const msg = `नमस्कार, आपल्या "${serviceTypeName}" सेवा विनंती कार्यालयाशी सामायिक केली गेली आहे. स्थिती: Document Shared to Office. धन्यवाद - Vedant Info`;
-        await Promise.all([sendWhatsApp(mobile, msg), sendSMS(mobile, msg)]);
+        const ticketDisplay = `VED-${String((sr as any)?.ticket_number ?? 0).padStart(6, '0')}`;
+        const msg = `नमस्कार,\nवेदांत कार्यालय येथे दाखल झालेला आपला अर्ज क्रमांक ${ticketDisplay} पुढील कार्यवाहीसाठी शासकीय कार्यालयात पाठविण्यात आला आहे.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+        await Promise.all([
+          sendWhatsApp(mobile, {
+            event: 'service_request_auto_advanced_shared',
+            bodyParams: [msg],
+          }),
+          sendSMS(mobile, msg),
+        ]);
       }
     }
   }
@@ -116,7 +121,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const serviceTypeName = (Array.isArray(stRaw) ? stRaw[0] : stRaw)?.name || '';
       if (mobile) {
         const msg = `नमस्कार, आपल्या "${serviceTypeName}" सेवा विनंतीवर काम सुरू झाले आहे. स्थिती: Work in Progress. धन्यवाद - Vedant Info`;
-        await Promise.all([sendWhatsApp(mobile, msg), sendSMS(mobile, msg)]);
+        await Promise.all([
+          sendWhatsApp(mobile, {
+            event: 'service_request_auto_advanced_wip',
+            bodyParams: [msg],
+          }),
+          sendSMS(mobile, msg),
+        ]);
       }
     }
   }

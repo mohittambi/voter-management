@@ -66,7 +66,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const msg = pdfLink
           ? `नमस्कार ${name} जी, Vedant Info कडून आपल्याला वाढदिवसाच्या हार्दिक शुभेच्छा! 🎂 आपले वाढदिवस पत्र येथे डाउनलोड करा: ${pdfLink} धन्यवाद - Vedant Info`
           : `नमस्कार ${name} जी, Vedant Info कडून आपल्याला वाढदिवसाच्या हार्दिक शुभेच्छा! Happy Birthday! 🎂 धन्यवाद - Vedant Info`;
-        await Promise.all([sendWhatsApp(mobile, msg), sendSMS(mobile, msg)]);
+        await Promise.all([
+          sendWhatsApp(mobile, { event: 'birthday_greeting', bodyParams: [msg] }),
+          sendSMS(mobile, msg),
+        ]);
         birthdayCount++;
       }
     }
@@ -75,7 +78,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const annMMDD = (row.anniversary_date as string).slice(5, 10).replace(/-/g, '-');
       if (annMMDD === todayMMDD) {
         const msg = `नमस्कार ${name} जी, Vedant Info कडून आपल्याला लग्नाच्या वाढदिवसाच्या हार्दिक शुभेच्छा! वर्धापन दिनाच्या शुभेच्छा! धन्यवाद - Vedant Info`;
-        await Promise.all([sendWhatsApp(mobile, msg), sendSMS(mobile, msg)]);
+        await Promise.all([
+          sendWhatsApp(mobile, { event: 'anniversary_greeting', bodyParams: [msg] }),
+          sendSMS(mobile, msg),
+        ]);
         anniversaryCount++;
       }
     }

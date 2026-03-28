@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "mkdir -p public/fonts && cp node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff public/fonts/ 2>/dev/null || true",
+    "postinstall": "mkdir -p public/fonts && cp node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff public/fonts/ 2>/dev/null || true && cp node_modules/@fontsource/anek-devanagari/files/anek-devanagari-devanagari-700-normal.woff public/fonts/ 2>/dev/null || true && cp node_modules/@fontsource/anek-devanagari/files/anek-devanagari-latin-700-normal.woff public/fonts/ 2>/dev/null || true && test -f public/fonts/anek-devanagari-700-full.ttf || curl -fsSL \"https://fonts.gstatic.com/s/anekdevanagari/v17/jVyo7nP0CGrUsxB-QiRgw0NlLaVt_QUAkYxLRoCL23mlh20ZVHOMAWbgHLAKle9n.ttf\" -o public/fonts/anek-devanagari-700-full.ttf",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -14,7 +14,9 @@
     "deploy": "vercel"
   },
   "dependencies": {
+    "@fontsource/anek-devanagari": "^5.2.7",
     "@fontsource/noto-sans-devanagari": "^5.2.8",
+    "@napi-rs/canvas": "^0.1.97",
     "@pdf-lib/fontkit": "^1.1.1",
     "@supabase/supabase-js": "^2.98.0",
     "chart.js": "^4.5.1",

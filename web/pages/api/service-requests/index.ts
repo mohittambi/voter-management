@@ -120,16 +120,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Notify voter on new service request
-    const ticketDisplay = `SR-${String(sr.ticket_number ?? 0).padStart(6, '0')}`;
-    const [profileRes, serviceTypeRes] = await Promise.all([
-      supabase.from('voter_profiles').select('mobile').eq('voter_id', voter_id).single(),
-      supabase.from('service_types').select('name').eq('id', service_type_id).single(),
-    ]);
+    const ticketDisplay = `VED-${String(sr.ticket_number ?? 0).padStart(6, '0')}`;
+    const profileRes = await supabase.from('voter_profiles').select('mobile').eq('voter_id', voter_id).single();
     const voterMobile = profileRes.data?.mobile;
-    const serviceTypeName = serviceTypeRes.data?.name || '';
     if (voterMobile) {
-      const msg = `नमस्कार, आपल्या "${serviceTypeName}" सेवा विनंतीची नोंद झाली आहे. दस्तऐवज ट्रॅकर क्रमांक: ${ticketDisplay}\nस्थिती: Document Submitted\nधन्यवाद - Vedant Info`;
-      await Promise.all([sendWhatsApp(voterMobile, msg), sendSMS(voterMobile, msg)]);
+      const msg = `नमस्कार,\nवेदांत कार्यालय येथे आपला अर्ज क्रमांक ${ticketDisplay} प्राप्त झाला आहे.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+      await Promise.all([
+        sendWhatsApp(voterMobile, {
+          event: 'service_request_created',
+          bodyParams: [msg],
+        }),
+        sendSMS(voterMobile, msg),
+      ]);
     }
 
     return res.status(201).json(sr);

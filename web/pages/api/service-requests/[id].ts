@@ -22,6 +22,22 @@ async function getSessionUser(req: NextApiRequest) {
   return user;
 }
 
+function buildStatusNotification(status: string, ticketDisplay: string) {
+  if (status === 'Document Submitted') {
+    return `नमस्कार,\nवेदांत कार्यालय येथे आपला अर्ज क्रमांक ${ticketDisplay} प्राप्त झाला आहे.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+  }
+  if (status === 'Document Shared to Office') {
+    return `नमस्कार,\nवेदांत कार्यालय येथे दाखल झालेला आपला अर्ज क्रमांक ${ticketDisplay} पुढील कार्यवाहीसाठी शासकीय कार्यालयात पाठविण्यात आला आहे.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+  }
+  if (status === 'Work Completed') {
+    return `नमस्कार,\nवेदांत कार्यालय येथे आपला अर्ज क्रमांक ${ticketDisplay} याची कार्यवाही पूर्ण झाली आहे.\nकृपया आपली कागदपत्रे कार्यालयातून प्राप्त करून घ्यावीत.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+  }
+  if (status === 'Closed / Delivered') {
+    return `नमस्कार,\nवेदांत कार्यालय येथे आपला अर्ज क्रमांक ${ticketDisplay} याची कार्यवाही पूर्ण करून संबंधित कागदपत्रे आपल्याकडे हस्तांतरित करण्यात आली आहेत.\nवेदांत कार्यालयास आपल्या सेवेसाठी संधी दिल्याबद्दल आम्ही आपले आभारी आहोत.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+  }
+  return `नमस्कार,\nआपल्या अर्ज क्रमांक ${ticketDisplay} ची स्थिती: ${status}\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query as { id: string };
   const supabase = getServiceRoleClient();
@@ -80,17 +96,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const vpRaw = mv?.voter_profiles;
     const vp = Array.isArray(vpRaw) ? vpRaw[0] : vpRaw;
     const mobile = vp?.mobile;
-    const stRaw = srData.data?.service_types;
-    const serviceTypeName = (Array.isArray(stRaw) ? stRaw[0] : stRaw)?.name || '';
     if (mobile) {
-      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'https://office.vedant.info');
-      const ticketDisplay = `SR-${String(updated?.ticket_number ?? 0).padStart(6, '0')}`;
-      const pdfUrl = `${baseUrl}/api/service-requests/${id}/pdf`;
-      const msg =
-        status === 'Work Completed'
-          ? `नमस्कार, आपल्या "${serviceTypeName}" सेवा विनंती पूर्ण झाली आहे. दस्तऐवज ट्रॅकर क्रमांक: ${ticketDisplay}. पूर्णता पत्र डाउनलोड करा: ${pdfUrl}\nधन्यवाद - Vedant Info`
-          : `नमस्कार, आपल्या "${serviceTypeName}" सेवा विनंतीची सद्यस्थिती:\n${status}\nधन्यवाद - Vedant Info`;
-      await Promise.all([sendWhatsApp(mobile, msg), sendSMS(mobile, msg)]);
+      const ticketDisplay = `VED-${String(updated?.ticket_number ?? 0).padStart(6, '0')}`;
+      const msg = buildStatusNotification(status, ticketDisplay);
+      await Promise.all([
+        sendWhatsApp(mobile, {
+          event: 'service_request_status_changed',
+          bodyParams: [msg],
+        }),
+        sendSMS(mobile, msg),
+      ]);
     }
 
     return res.json(updated);
