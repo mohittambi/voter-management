@@ -8,7 +8,10 @@ import { PDFDocument } from 'pdf-lib';
 
 const LETTERHEAD_FILENAME = 'letterhead-birthday.pdf';
 
-/** Full TTF from Google Fonts (Latin + Devanagari) — used by Skia/HarfBuzz on canvas, not pdf-lib drawText. */
+/**
+ * Full TTF (Devanagari + Latin glyphs) — required so ASCII punctuation like the comma in "प्रति,"
+ * renders correctly. Subset WOFF files from @fontsource only include Devanagari codepoints.
+ */
 const ANEK_FULL_TTF = 'anek-devanagari-700-full.ttf';
 
 const CANVAS_FONT_FAMILY = 'AnekBirthday';
@@ -36,7 +39,12 @@ function resolveLetterheadPath(): string {
   return inWebAssets;
 }
 
-function resolveAnekFullFontPath(): string {
+function resolveAnekGreetingFontPath(): string {
+  const envPath = process.env.BIRTHDAY_GREETING_FONT_PATH?.trim();
+  if (envPath) {
+    const p = path.isAbsolute(envPath) ? envPath : path.join(process.cwd(), envPath);
+    if (fs.existsSync(p)) return p;
+  }
   return path.join(process.cwd(), 'public', 'fonts', ANEK_FULL_TTF);
 }
 
@@ -110,11 +118,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  const fontPath = resolveAnekFullFontPath();
+  const fontPath = resolveAnekGreetingFontPath();
   if (!fs.existsSync(fontPath)) {
     console.error('[birthday-pdf] Anek full TTF missing:', fontPath);
     return res.status(500).json({
-      error: `Missing ${ANEK_FULL_TTF} under public/fonts/ (full Anek Devanagari Bold from Google Fonts).`,
+      error: `Missing ${ANEK_FULL_TTF} under public/fonts/. Run npm install (postinstall downloads it) or set BIRTHDAY_GREETING_FONT_PATH.`,
     });
   }
 
