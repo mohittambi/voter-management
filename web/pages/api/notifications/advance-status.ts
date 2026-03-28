@@ -65,11 +65,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const mobile = vp?.mobile;
       if (mobile) {
         const ticketDisplay = `VED-${String((sr as any)?.ticket_number ?? 0).padStart(6, '0')}`;
-        const msg = `नमस्कार,\nवेदांत कार्यालय येथे दाखल झालेला आपला अर्ज क्रमांक ${ticketDisplay} पुढील कार्यवाहीसाठी शासकीय कार्यालयात पाठविण्यात आला आहे.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+        const msg = `नमस्कार,\n\nमा. मंत्री बाळासाहेब थोरात यांच्या यशोधन कार्यालय, मनोली येथे आपला अर्ज क्र. ${ticketDisplay} प्राप्त झाला होता.\n\nसदर अर्ज पुढील कार्यवाहीसाठी संबंधित शासकीय कार्यालयाकडे पाठविण्यात आला असून, समन्वयासाठी श्री. पवन साबळे (मो. 9850300481) यांच्याकडे सोपविण्यात आला आहे.\n\nधन्यवाद.`;
         await Promise.all([
           sendWhatsApp(mobile, {
             event: 'service_request_auto_advanced_shared',
-            bodyParams: [msg],
+            bodyParams: [ticketDisplay],
           }),
           sendSMS(mobile, msg),
         ]);
@@ -120,11 +120,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const stRaw = srData?.service_types;
       const serviceTypeName = (Array.isArray(stRaw) ? stRaw[0] : stRaw)?.name || '';
       if (mobile) {
-        const msg = `नमस्कार, आपल्या "${serviceTypeName}" सेवा विनंतीवर काम सुरू झाले आहे. स्थिती: Work in Progress. धन्यवाद - Vedant Info`;
+        const ticketDisplayWip = `VED-${String((sr as any)?.ticket_number ?? 0).padStart(6, '0')}`;
+        const msg = `नमस्कार,\n\nमा. मंत्री बाळासाहेब थोरात यांच्या यशोधन कार्यालय, मनोली येथे आपला अर्ज क्र. ${ticketDisplayWip} याची कार्यवाही पूर्ण झाली आहे.\n\nकृपया आपली कागदपत्रे कार्यालयातून प्राप्त करून घ्यावीत. अधिक माहितीसाठी श्री. पवन साबळे (मो. 9850300481) यांच्याशी संपर्क साधावा.\n\nधन्यवाद.`;
         await Promise.all([
           sendWhatsApp(mobile, {
             event: 'service_request_auto_advanced_wip',
-            bodyParams: [msg],
+            bodyParams: [ticketDisplayWip],
           }),
           sendSMS(mobile, msg),
         ]);

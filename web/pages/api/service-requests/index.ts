@@ -2,6 +2,12 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceRoleClient } from '../../../lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
 import { sendWhatsApp, sendSMS } from '../../../lib/messaging';
+import {
+  buildVedantPersonLine,
+  sendVedantOfficeWhatsAppCopy,
+  serviceTypeGenitiveMarathi,
+  smsVedantWorkSubmitted,
+} from '../../../lib/vedantServiceNotifications';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -119,20 +125,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       changed_at: sr.created_at,
     });
 
-    // Notify voter on new service request
-    const ticketDisplay = `VED-${String(sr.ticket_number ?? 0).padStart(6, '0')}`;
-    const profileRes = await supabase.from('voter_profiles').select('mobile').eq('voter_id', voter_id).single();
-    const voterMobile = profileRes.data?.mobile;
+    // Notify: Vedant submission line + office WhatsApp copy (VEDANT_OFFICE_NOTIFY_WHATSAPP)
+    const voterRes = await supabase
+      .from('master_voters')
+      .select(
+        'name_marathi, name_english, first_name, middle_name, surname, voter_profiles!voter_profiles_voter_id_fkey(mobile)'
+      )
+      .eq('id', voter_id)
+      .single();
+    const stRes = await supabase.from('service_types').select('name').eq('id', service_type_id).single();
+
+    const mv = voterRes.data as any;
+    const vpRaw = mv?.voter_profiles;
+    const vp = Array.isArray(vpRaw) ? vpRaw[0] : vpRaw;
+    const voterMobile = vp?.mobile as string | undefined;
+    const nameMr =
+      mv?.name_marathi ||
+      [mv?.first_name, mv?.middle_name, mv?.surname].filter(Boolean).join(' ').trim() ||
+      '';
+    const nameEn = mv?.name_english || '';
+    const serviceName = (stRes.data?.name as string) || '';
+    const servicePart = serviceTypeGenitiveMarathi(serviceName);
+    const personLine = buildVedantPersonLine(nameMr, nameEn, voterMobile || '');
+    const msg = smsVedantWorkSubmitted(personLine, servicePart);
+    const bodyParams: [string, string] = [personLine, servicePart];
+
+    const tasks: Promise<void>[] = [];
+    tasks.push(sendVedantOfficeWhatsAppCopy('vedant_work_submitted', bodyParams));
     if (voterMobile) {
-      const msg = `नमस्कार,\nवेदांत कार्यालय येथे आपला अर्ज क्रमांक ${ticketDisplay} प्राप्त झाला आहे.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
-      await Promise.all([
+      tasks.push(
         sendWhatsApp(voterMobile, {
-          event: 'service_request_created',
-          bodyParams: [msg],
+          event: 'vedant_work_submitted',
+          bodyParams,
         }),
-        sendSMS(voterMobile, msg),
-      ]);
+        sendSMS(voterMobile, msg)
+      );
     }
+    await Promise.all(tasks);
 
     return res.status(201).json(sr);
   }

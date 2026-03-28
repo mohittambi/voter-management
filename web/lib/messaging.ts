@@ -9,12 +9,20 @@ const WAY2SMART_TEMPLATE_LANG = (process.env.WAY2SMART_TEMPLATE_LANG || 'mr').tr
 
 /** Notification kinds → approved Meta template names (env). */
 const EVENT_TEMPLATE_ENV_KEYS = {
-  service_request_created: 'WAY2SMART_TEMPLATE_SERVICE_REQUEST_CREATED',
-  service_request_status_changed: 'WAY2SMART_TEMPLATE_SERVICE_REQUEST_STATUS_CHANGED',
+  // Service request creation / per-status manual changes
+  service_request_created:         'WAY2SMART_TEMPLATE_SERVICE_REQUEST_CREATED',
+  status_document_submitted:       'WAY2SMART_TEMPLATE_SERVICE_REQUEST_CREATED',
+  status_document_shared:          'WAY2SMART_TEMPLATE_SERVICE_REQUEST_AUTO_ADVANCED_SHARED',
+  status_work_completed:           'WAY2SMART_TEMPLATE_SERVICE_REQUEST_AUTO_ADVANCED_WIP',
+  status_closed_delivered:         'WAY2SMART_TEMPLATE_SERVICE_REQUEST_STATUS_CHANGED',
+  // Auto-advance cron events (same templates, separate keys for clarity)
   service_request_auto_advanced_shared: 'WAY2SMART_TEMPLATE_SERVICE_REQUEST_AUTO_ADVANCED_SHARED',
-  service_request_auto_advanced_wip: 'WAY2SMART_TEMPLATE_SERVICE_REQUEST_AUTO_ADVANCED_WIP',
-  birthday_greeting: 'WAY2SMART_TEMPLATE_BIRTHDAY_GREETING',
-  anniversary_greeting: 'WAY2SMART_TEMPLATE_ANNIVERSARY_GREETING',
+  service_request_auto_advanced_wip:    'WAY2SMART_TEMPLATE_SERVICE_REQUEST_AUTO_ADVANCED_WIP',
+  // Vedant office lines: body {{1}} = person line, {{2}} = service (e.g. रेशन कार्डचे)
+  vedant_work_submitted:              'WAY2SMART_TEMPLATE_VEDANT_WORK_SUBMITTED',
+  vedant_work_completed:              'WAY2SMART_TEMPLATE_VEDANT_WORK_COMPLETED',
+  birthday_greeting:                    'WAY2SMART_TEMPLATE_BIRTHDAY_GREETING',
+  anniversary_greeting:                 'WAY2SMART_TEMPLATE_ANNIVERSARY_GREETING',
 } as const;
 
 export type WhatsAppEvent = keyof typeof EVENT_TEMPLATE_ENV_KEYS;

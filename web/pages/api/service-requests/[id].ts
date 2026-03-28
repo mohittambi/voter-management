@@ -1,7 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceRoleClient } from '../../../lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
-import { sendWhatsApp, sendSMS } from '../../../lib/messaging';
+import { sendWhatsApp, sendSMS, WhatsAppEvent } from '../../../lib/messaging';
+import {
+  buildVedantPersonLine,
+  sendVedantOfficeWhatsAppCopy,
+  serviceTypeGenitiveMarathi,
+  smsVedantWorkCompleted,
+} from '../../../lib/vedantServiceNotifications';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -22,20 +28,29 @@ async function getSessionUser(req: NextApiRequest) {
   return user;
 }
 
-function buildStatusNotification(status: string, ticketDisplay: string) {
-  if (status === 'Document Submitted') {
-    return `नमस्कार,\nवेदांत कार्यालय येथे आपला अर्ज क्रमांक ${ticketDisplay} प्राप्त झाला आहे.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+function buildStatusNotification(status: string, ticketDisplay: string): string {
+  switch (status) {
+    case 'Document Submitted':
+      return `नमस्कार,\n\nमा. मंत्री बाळासाहेब थोरात यांच्या यशोधन कार्यालय, मनोली येथे आपला अर्ज क्र. ${ticketDisplay} प्राप्त झाला आहे.\n\nसदर अर्ज पुढील कार्यवाहीसाठी श्री. पवन साबळे (मो. 9850300481) यांच्याकडे सोपविण्यात आला आहे.\n\nधन्यवाद.`;
+    case 'Document Shared to Office':
+      return `नमस्कार,\n\nमा. मंत्री बाळासाहेब थोरात यांच्या यशोधन कार्यालय, मनोली येथे आपला अर्ज क्र. ${ticketDisplay} प्राप्त झाला होता.\n\nसदर अर्ज पुढील कार्यवाहीसाठी संबंधित शासकीय कार्यालयाकडे पाठविण्यात आला असून, समन्वयासाठी श्री. पवन साबळे (मो. 9850300481) यांच्याकडे सोपविण्यात आला आहे.\n\nधन्यवाद.`;
+    case 'Work Completed':
+      return `नमस्कार,\n\nमा. मंत्री बाळासाहेब थोरात यांच्या यशोधन कार्यालय, मनोली येथे आपला अर्ज क्र. ${ticketDisplay} याची कार्यवाही पूर्ण झाली आहे.\n\nकृपया आपली कागदपत्रे कार्यालयातून प्राप्त करून घ्यावीत. अधिक माहितीसाठी श्री. पवन साबळे (मो. 9850300481) यांच्याशी संपर्क साधावा.\n\nधन्यवाद.`;
+    case 'Closed / Delivered':
+      return `नमस्कार,\n\nमा. मंत्री बाळासाहेब थोरात यांच्या यशोधन कार्यालय, मनोली येथे आपला अर्ज क्र. ${ticketDisplay} याची कार्यवाही पूर्ण करून संबंधित कागदपत्रे आपल्याकडे हस्तांतरित करण्यात आली आहेत.\n\nयशोधन कार्यालयास आपल्या सेवेसाठी संधी दिल्याबद्दल आम्ही आपले आभारी आहोत. अधिक माहितीसाठी श्री. पवन साबळे (मो. 9850300481) यांच्याशी संपर्क साधावा.\n\nधन्यवाद.`;
+    default:
+      return `नमस्कार,\nआपल्या अर्ज क्र. ${ticketDisplay} ची स्थिती: ${status}\nअधिक माहितीसाठी श्री. पवन साबळे (मो. 9850300481) यांच्याशी संपर्क साधावा.`;
   }
-  if (status === 'Document Shared to Office') {
-    return `नमस्कार,\nवेदांत कार्यालय येथे दाखल झालेला आपला अर्ज क्रमांक ${ticketDisplay} पुढील कार्यवाहीसाठी शासकीय कार्यालयात पाठविण्यात आला आहे.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
+}
+
+function statusToWhatsAppEvent(status: string): WhatsAppEvent {
+  switch (status) {
+    case 'Document Submitted':    return 'status_document_submitted';
+    case 'Document Shared to Office': return 'status_document_shared';
+    case 'Work Completed':        return 'status_work_completed';
+    case 'Closed / Delivered':    return 'status_closed_delivered';
+    default:                      return 'status_closed_delivered';
   }
-  if (status === 'Work Completed') {
-    return `नमस्कार,\nवेदांत कार्यालय येथे आपला अर्ज क्रमांक ${ticketDisplay} याची कार्यवाही पूर्ण झाली आहे.\nकृपया आपली कागदपत्रे कार्यालयातून प्राप्त करून घ्यावीत.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
-  }
-  if (status === 'Closed / Delivered') {
-    return `नमस्कार,\nवेदांत कार्यालय येथे आपला अर्ज क्रमांक ${ticketDisplay} याची कार्यवाही पूर्ण करून संबंधित कागदपत्रे आपल्याकडे हस्तांतरित करण्यात आली आहेत.\nवेदांत कार्यालयास आपल्या सेवेसाठी संधी दिल्याबद्दल आम्ही आपले आभारी आहोत.\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
-  }
-  return `नमस्कार,\nआपल्या अर्ज क्रमांक ${ticketDisplay} ची स्थिती: ${status}\nअधिक माहितीसाठी संपर्क करा: ९८८११७७४४४`;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -88,22 +103,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Notify voter on status change
     const srData = await supabase
       .from('service_requests')
-      .select('service_types(name), master_voters(voter_profiles!voter_profiles_voter_id_fkey(mobile))')
+      .select(
+        'service_types(name), master_voters(name_marathi, name_english, first_name, middle_name, surname, voter_profiles!voter_profiles_voter_id_fkey(mobile))'
+      )
       .eq('id', id)
       .single();
     const mvRaw = srData.data?.master_voters;
     const mv = Array.isArray(mvRaw) ? mvRaw[0] : mvRaw;
     const vpRaw = mv?.voter_profiles;
     const vp = Array.isArray(vpRaw) ? vpRaw[0] : vpRaw;
-    const mobile = vp?.mobile;
-    console.log('[service-request PATCH] voter mobile lookup:', { id, status, mobile: mobile || null, srDataError: srData.error });
-    if (mobile) {
-      const ticketDisplay = `VED-${String(updated?.ticket_number ?? 0).padStart(6, '0')}`;
+    const mobile = vp?.mobile as string | undefined;
+    const ticketDisplay = `VED-${String(updated?.ticket_number ?? 0).padStart(6, '0')}`;
+    const stRaw = srData.data?.service_types;
+    const serviceName = (Array.isArray(stRaw) ? stRaw[0] : stRaw)?.name || '';
+
+    if (status === 'Work Completed' || status === 'Closed / Delivered') {
+      const nameMr =
+        (mv as any)?.name_marathi ||
+        [(mv as any)?.first_name, (mv as any)?.middle_name, (mv as any)?.surname].filter(Boolean).join(' ').trim() ||
+        '';
+      const nameEn = (mv as any)?.name_english || '';
+      const servicePart = serviceTypeGenitiveMarathi(serviceName);
+      const personLine = buildVedantPersonLine(nameMr, nameEn, mobile || '');
+      const msg = smsVedantWorkCompleted(personLine, servicePart);
+      const bodyParams: [string, string] = [personLine, servicePart];
+      const tasks: Promise<void>[] = [sendVedantOfficeWhatsAppCopy('vedant_work_completed', bodyParams)];
+      if (mobile) {
+        tasks.push(
+          sendWhatsApp(mobile, { event: 'vedant_work_completed', bodyParams }),
+          sendSMS(mobile, msg)
+        );
+      }
+      await Promise.all(tasks);
+    } else if (mobile) {
       const msg = buildStatusNotification(status, ticketDisplay);
       await Promise.all([
         sendWhatsApp(mobile, {
-          event: 'service_request_status_changed',
-          bodyParams: [msg],
+          event: statusToWhatsAppEvent(status),
+          bodyParams: [ticketDisplay],
         }),
         sendSMS(mobile, msg),
       ]);
