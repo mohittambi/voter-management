@@ -25,6 +25,20 @@ const DEFAULT_GREETING_TOP_FROM_PAGE_TOP_PT = 290;
 /** Default left edge of overlay (pt); align with letterhead body gutter (smaller = further left). */
 const DEFAULT_GREETING_X_PT = 28;
 
+/**
+ * Date line on the right (canvas → PNG). Default: Marathi दिनांक `दि. DD/MM/YYYY` (Devanagari digits).
+ * Set `BIRTHDAY_PDF_DATE_FORMAT` to `en_ordinal` for the previous English style. No env vars for date text.
+ */
+type BirthdayPdfDateFormat = 'mr_dinank' | 'en_ordinal';
+const BIRTHDAY_PDF_DATE_FORMAT: BirthdayPdfDateFormat = 'mr_dinank';
+
+const BIRTHDAY_DATE_TIMEZONE = 'Asia/Kolkata';
+const BIRTHDAY_DATE_CANVAS_PX = 26;
+/** PDF pt: date top sits this many pt above greeting top (toward page top). */
+const BIRTHDAY_DATE_TOP_OFFSET_PT = 44;
+/** Right margin from page edge (pt); larger than left gutter to match letterhead's right content boundary. */
+const BIRTHDAY_DATE_RIGHT_GUTTER_PT = 56;
+
 let canvasFontRegisteredPath: string | null = null;
 
 function resolveLetterheadPath(): string {
@@ -52,6 +66,91 @@ function parseCoord(envVal: string | undefined, fallback: number): number {
   if (envVal === undefined || envVal === '') return fallback;
   const n = Number.parseFloat(envVal);
   return Number.isFinite(n) ? n : fallback;
+}
+
+const MONTHS_EN = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
+const DEVANAGARI_DIGITS = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'] as const;
+
+function parseCalendarYmd(d: Date, timeZone: string): { day: number; month: number; year: number } | null {
+  const fmt = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+  });
+  const parts = fmt.formatToParts(d);
+  let day = 0;
+  let month = 0;
+  let year = 0;
+  for (const p of parts) {
+    if (p.type === 'day') day = Number.parseInt(p.value, 10);
+    if (p.type === 'month') month = Number.parseInt(p.value, 10);
+    if (p.type === 'year') year = Number.parseInt(p.value, 10);
+  }
+  if (!day || !month || !year) return null;
+  return { day, month, year };
+}
+
+function ordinalSuffixEn(day: number): string {
+  if (day >= 11 && day <= 13) return 'th';
+  switch (day % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+}
+
+/** e.g. "28th March, 2026" — used when `BIRTHDAY_PDF_DATE_FORMAT === 'en_ordinal'`. */
+function formatEnglishOrdinalDate(d: Date, timeZone: string): string {
+  const ymd = parseCalendarYmd(d, timeZone);
+  if (!ymd) return d.toISOString().slice(0, 10);
+  const { day, month, year } = ymd;
+  return `${day}${ordinalSuffixEn(day)} ${MONTHS_EN[month - 1]}, ${year}`;
+}
+
+function asciiDigitsToDevanagari(s: string): string {
+  return Array.from(s)
+    .map((c) => {
+      const n = Number.parseInt(c, 10);
+      return Number.isFinite(n) && n >= 0 && n <= 9 ? DEVANAGARI_DIGITS[n] : c;
+    })
+    .join('');
+}
+
+/** e.g. `दि. २९/०९/२०२५` — DD/MM/YYYY with Devanagari numerals. */
+function formatMarathiDinank(d: Date, timeZone: string): string {
+  const ymd = parseCalendarYmd(d, timeZone);
+  if (!ymd) return d.toISOString().slice(0, 10);
+  const dd = asciiDigitsToDevanagari(String(ymd.day).padStart(2, '0'));
+  const mm = asciiDigitsToDevanagari(String(ymd.month).padStart(2, '0'));
+  const yyyy = asciiDigitsToDevanagari(String(ymd.year));
+  return `दि. ${dd}/${mm}/${yyyy}`;
+}
+
+function formatBirthdayPdfDate(d: Date): string {
+  if (BIRTHDAY_PDF_DATE_FORMAT === 'en_ordinal') {
+    return formatEnglishOrdinalDate(d, BIRTHDAY_DATE_TIMEZONE);
+  }
+  return formatMarathiDinank(d, BIRTHDAY_DATE_TIMEZONE);
 }
 
 function ensureCanvasFont(fontPath: string): void {
@@ -170,7 +269,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const [templatePage] = await pdfDoc.copyPages(templateDoc, [0]);
     pdfDoc.addPage(templatePage);
     const page = pdfDoc.getPage(0);
-    const { height: pageHeight } = page.getSize();
+    const { width: pageWidth, height: pageHeight } = page.getSize();
 
     const pngImage = await pdfDoc.embedPng(pngBuffer);
     const imgW = pngImage.width;
@@ -189,6 +288,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const anchorY = process.env.BIRTHDAY_GREETING_Y?.trim()
       ? parseCoord(process.env.BIRTHDAY_GREETING_Y, pageHeight - topFromPageTopPt)
       : pageHeight - topFromPageTopPt;
+
+    // Greeting top edge (PDF y); date sits above this by BIRTHDAY_DATE_TOP_OFFSET_PT.
+    const greetingTopY = anchorY;
+
+    const dateStr = formatBirthdayPdfDate(new Date());
+    const dateLineHeightPx = Math.round(BIRTHDAY_DATE_CANVAS_PX * 1.2);
+    const datePngBuffer = renderGreetingPng(
+      [dateStr],
+      fontPath,
+      BIRTHDAY_DATE_CANVAS_PX,
+      dateLineHeightPx
+    );
+    const datePngImage = await pdfDoc.embedPng(datePngBuffer);
+    const dateDrawW = datePngImage.width * imageScale;
+    const dateDrawH = datePngImage.height * imageScale;
+    const dateX = pageWidth - BIRTHDAY_DATE_RIGHT_GUTTER_PT - dateDrawW;
+    const dateBottomY = greetingTopY + BIRTHDAY_DATE_TOP_OFFSET_PT - dateDrawH;
+
+    page.drawImage(datePngImage, {
+      x: dateX,
+      y: dateBottomY,
+      width: dateDrawW,
+      height: dateDrawH,
+    });
 
     page.drawImage(pngImage, {
       x: textX,
