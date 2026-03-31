@@ -541,7 +541,7 @@ function EmployeesTab() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Employees / कर्मचारी</h3>
-          <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>Karamchari CRUD - paid staff</div>
+          <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>Karamchari paid staff / कर्मचारी व्यवस्थापन</div>
         </div>
         <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary" style={{ padding: '9px 18px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Plus size={14} /> Add Employee / कर्मचारी जोडा

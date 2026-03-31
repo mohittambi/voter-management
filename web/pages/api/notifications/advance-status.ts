@@ -106,30 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         changed_at: now.toISOString(),
       });
       advancedToWip.push(sr.id);
-
-      const { data: srData } = await supabase
-        .from('service_requests')
-        .select('service_types(name), master_voters(voter_profiles!voter_profiles_voter_id_fkey(mobile))')
-        .eq('id', sr.id)
-        .single();
-      const mvRaw = srData?.master_voters;
-      const mv = Array.isArray(mvRaw) ? mvRaw[0] : mvRaw;
-      const vpRaw = mv?.voter_profiles;
-      const vp = Array.isArray(vpRaw) ? vpRaw[0] : vpRaw;
-      const mobile = vp?.mobile;
-      const stRaw = srData?.service_types;
-      const serviceTypeName = (Array.isArray(stRaw) ? stRaw[0] : stRaw)?.name || '';
-      if (mobile) {
-        const ticketDisplayWip = `VED-${String((sr as any)?.ticket_number ?? 0).padStart(6, '0')}`;
-        const msg = `नमस्कार,\n\nमा. मंत्री बाळासाहेब थोरात यांच्या यशोधन कार्यालय, मनोली येथे आपला अर्ज क्र. ${ticketDisplayWip} याची कार्यवाही पूर्ण झाली आहे.\n\nकृपया आपली कागदपत्रे कार्यालयातून प्राप्त करून घ्यावीत. अधिक माहितीसाठी श्री. पवन साबळे (मो. 9850300481) यांच्याशी संपर्क साधावा.\n\nधन्यवाद.`;
-        await Promise.all([
-          sendWhatsApp(mobile, {
-            event: 'service_request_auto_advanced_wip',
-            bodyParams: [ticketDisplayWip],
-          }),
-          sendSMS(mobile, msg),
-        ]);
-      }
+      // Work in Progress: no WhatsApp SMS (silent transition)
     }
   }
 

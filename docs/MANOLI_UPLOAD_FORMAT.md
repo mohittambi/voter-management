@@ -2,7 +2,9 @@
 
 ## Overview
 
-The system now supports the Manoli.xlsx format with full Marathi language support, extended voter data fields, and automatic family linking capabilities.
+The system now supports the Manoli.xlsx format with full Marathi language support and extended voter data fields. **Family records are not created by upload**—link families manually in the app after importing voters.
+
+To wipe all voters and re-import from a fresh sheet, run the SQL in [`clear-voters-for-reimport.sql`](./clear-voters-for-reimport.sql) in the Supabase SQL Editor, then upload via `/upload`.
 
 ## Supported File Format
 
@@ -38,15 +40,15 @@ The system now supports the Manoli.xlsx format with full Marathi language suppor
 
 ## Features
 
-### 1. Automatic Family Linking
+### 1. Family columns (manual linking only)
 
-The system automatically creates family relationships based on:
+Upload **does not** insert `families` or `family_members` rows. You can still include sheet columns for your own reference; families are created and linked manually in the UI afterward.
 
-- **कुटुंबप्रमुख** (family head name): Identifies which family a voter belongs to
-- **kutumb_pramukh** flag: 
-  - `1` = This voter is a family head
-  - `0` = This voter is a family member
-- **नाते** (relationship): Specifies the relationship type
+Columns that describe family context (for reference):
+
+- **कुटुंबप्रमुख** (family head name)
+- **kutumb_pramukh**: `1` / `0` (head vs member in source data)
+- **नाते** (relationship)
 
 #### Relationship Mapping
 
@@ -101,15 +103,14 @@ Ensure your Excel file follows the Manoli.xlsx format with the required columns.
 
 The system will display:
 - Total voters imported
-- Number of families auto-linked
 - Any errors encountered
 
 Example:
 ```
 ✅ अपलोड यशस्वी! / Upload successful!
 2671 मतदार आयात केले / 2671 voters imported
-458 कुटुंबे तयार केली / 458 families auto-linked
 ```
+(Family linking is done separately in the app.)
 
 ## Search & Filtering
 
@@ -222,10 +223,12 @@ Each voter profile shows:
 ```json
 {
   "imported": 2671,
-  "families_created": 458,
+  "families_created": 0,
   "import_id": "uuid..."
 }
 ```
+
+(`families_created` is always `0`; families are not created during upload.)
 
 ## Troubleshooting
 
@@ -240,7 +243,7 @@ Each voter profile shows:
 
 ### Duplicate voter_id
 - Existing voter_id will be updated (upsert)
-- Old family links are preserved unless new data overrides
+- Family rows in the database are unchanged by re-upload (manage families in the app)
 
 ## Support
 

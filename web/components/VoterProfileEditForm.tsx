@@ -2,10 +2,22 @@ import { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { apiUrl } from '../lib/api';
 
+export type ProfileUpdateResult = { profile: any; master: any | null };
+
 interface VoterProfileEditFormProps {
-  voter: { id: string };
+  voter: {
+    id: string;
+    voter_id?: string | null;
+    first_name?: string | null;
+    middle_name?: string | null;
+    surname?: string | null;
+    name_english?: string | null;
+    name_marathi?: string | null;
+    first_name_marathi?: string | null;
+    surname_marathi?: string | null;
+  };
   profile: any;
-  onSave: (updatedProfile: any) => void;
+  onSave: (result: ProfileUpdateResult) => void;
   onCancel: () => void;
   saving?: boolean;
 }
@@ -31,6 +43,14 @@ export default function VoterProfileEditForm({
     const formData = new FormData(form);
     const body = {
       voter_id: voter.id,
+      epic_number: formData.get('epic_number'),
+      first_name: formData.get('first_name'),
+      middle_name: formData.get('middle_name'),
+      surname: formData.get('surname'),
+      name_english: formData.get('name_english'),
+      name_marathi: formData.get('name_marathi'),
+      first_name_marathi: formData.get('first_name_marathi'),
+      surname_marathi: formData.get('surname_marathi'),
       dob: formData.get('dob') || null,
       mobile: formData.get('mobile') || null,
       mobile_secondary: formData.get('mobile_secondary') || null,
@@ -62,8 +82,8 @@ export default function VoterProfileEditForm({
     });
 
     if (res.ok) {
-      const updated = await res.json();
-      onSave(updated);
+      const data = await res.json();
+      onSave(data);
     } else {
       alert('Update failed / अपडेट अयशस्वी');
     }
@@ -71,6 +91,53 @@ export default function VoterProfileEditForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
+        <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Name / नाव</h4>
+        <div style={{ marginBottom: 16 }}>
+          <label className="label">Voter ID (EPIC) / मतदार ओळखपत्र</label>
+          <input
+            name="epic_number"
+            className="input"
+            defaultValue={voter.voter_id || ''}
+            placeholder="e.g. ABC1234567"
+            style={{ fontFamily: 'monospace' }}
+          />
+          <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+            Imported rows without EPIC use a placeholder like <code style={{ fontSize: 11 }}>NOEPIC-R…</code> — replace
+            with the real EPIC when you have it.
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          <div style={{ gridColumn: 'span 2' }}>
+            <label className="label">Full name (English)</label>
+            <input name="name_english" className="input" defaultValue={voter.name_english || ''} placeholder="English full name" />
+          </div>
+          <div>
+            <label className="label">First name (English)</label>
+            <input name="first_name" className="input" defaultValue={voter.first_name || ''} />
+          </div>
+          <div>
+            <label className="label">Middle name (English)</label>
+            <input name="middle_name" className="input" defaultValue={voter.middle_name || ''} />
+          </div>
+          <div style={{ gridColumn: 'span 2' }}>
+            <label className="label">Surname (English)</label>
+            <input name="surname" className="input" defaultValue={voter.surname || ''} />
+          </div>
+          <div style={{ gridColumn: 'span 2' }}>
+            <label className="label">Full name (Marathi) / मराठी पूर्ण नाव</label>
+            <input name="name_marathi" className="input" defaultValue={voter.name_marathi || ''} dir="auto" />
+          </div>
+          <div>
+            <label className="label">First name (Marathi)</label>
+            <input name="first_name_marathi" className="input" defaultValue={voter.first_name_marathi || ''} dir="auto" />
+          </div>
+          <div>
+            <label className="label">Surname (Marathi) / आडनाव</label>
+            <input name="surname_marathi" className="input" defaultValue={voter.surname_marathi || ''} dir="auto" />
+          </div>
+        </div>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
         <div>
           <label className="label">Date of Birth / जन्मतारीख</label>

@@ -1,6 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceRoleClient } from '../../../lib/supabaseClient';
 
+function trimOrNull(v: unknown): string | null {
+  if (v == null) return null;
+  if (typeof v !== 'string' && typeof v !== 'number') return null;
+  const s = String(v).trim();
+  return s.length ? s : null;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end();
   try {
@@ -21,6 +28,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       anniversary_date,
       worker_id,
       employee_id,
+      first_name,
+      middle_name,
+      surname,
+      name_english,
+      name_marathi,
+      first_name_marathi,
+      surname_marathi,
+      epic_number,
     } = req.body;
     if (!voter_id) return res.status(400).json({ error: 'voter_id required' });
     const supabase = getServiceRoleClient();
@@ -45,6 +60,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .maybeSingle();
       if (employeeErr) return res.status(500).json({ error: employeeErr.message });
       if (!employee) return res.status(400).json({ error: 'Invalid employee_id' });
+    }
+
+    const patch: Record<string, string | null> = {};
+    if (first_name !== undefined) patch.first_name = trimOrNull(first_name);
+    if (middle_name !== undefined) patch.middle_name = trimOrNull(middle_name);
+    if (surname !== undefined) patch.surname = trimOrNull(surname);
+    if (name_english !== undefined) patch.name_english = trimOrNull(name_english);
+    if (name_marathi !== undefined) patch.name_marathi = trimOrNull(name_marathi);
+    if (first_name_marathi !== undefined) patch.first_name_marathi = trimOrNull(first_name_marathi);
+    if (surname_marathi !== undefined) patch.surname_marathi = trimOrNull(surname_marathi);
+
+    if (epic_number !== undefined) {
+      const epic = trimOrNull(epic_number);
+      if (!epic) return res.status(400).json({ error: 'EPIC / Voter ID cannot be empty' });
+      const normEpic = epic.toUpperCase();
+      const { data: clash, error: clashErr } = await supabase
+        .from('master_voters')
+        .select('id')
+        .eq('voter_id', normEpic)
+        .neq('id', voter_id)
+        .maybeSingle();
+      if (clashErr) return res.status(500).json({ error: clashErr.message });
+      if (clash) return res.status(400).json({ error: 'This Voter ID (EPIC) is already in use' });
+      patch.voter_id = normEpic;
+    }
+
+    let masterRow: Record<string, unknown> | null = null;
+    if (Object.keys(patch).length > 0) {
+      const { data: updatedMaster, error: mErr } = await supabase
+        .from('master_voters')
+        .update(patch)
+        .eq('id', voter_id)
+        .select()
+        .single();
+      if (mErr) return res.status(500).json({ error: mErr.message });
+      masterRow = updatedMaster as Record<string, unknown>;
     }
 
     // upsert into voter_profiles by voter_id
@@ -78,7 +129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // insert audit log
     await supabase.from('audit_logs').insert([{ user_id: null, action: 'update_profile', details: { voter_id }, }]);
 
-    return res.json(data);
+    return res.json({ profile: data, master: masterRow });
   } catch (err:any) {
     console.error(err);
     return res.status(500).json({ error: err.message || 'server error' });

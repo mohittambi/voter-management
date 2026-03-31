@@ -137,23 +137,47 @@ export default function VoterProfile() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    
-    // Fetch voter and profile
-    fetch(apiUrl(`/api/voter?id=${id}`))
-      .then(r => r.json())
-      .then(d => {
-        setVoter(d.master || null);
-        setProfile(d.profile || null);
-      });
-    
-    // Fetch family info
-    fetch(apiUrl(`/api/family/info?voter_id=${id}`))
-      .then(r => r.json())
-      .then(d => {
-        setFamilyInfo(d);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const [voterRes, familyRes] = await Promise.all([
+          fetch(apiUrl(`/api/voter?id=${id}`)),
+          fetch(apiUrl(`/api/family/info?voter_id=${id}`)),
+        ]);
+
+        const voterJson = await voterRes.json();
+        if (cancelled) return;
+
+        if (!voterRes.ok) {
+          setVoter(null);
+          setProfile(null);
+        } else {
+          setVoter(voterJson.master ?? null);
+          setProfile(voterJson.profile ?? null);
+        }
+
+        if (familyRes.ok) {
+          const famJson = await familyRes.json();
+          if (!cancelled) setFamilyInfo(famJson);
+        } else if (!cancelled) {
+          setFamilyInfo(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setVoter(null);
+          setProfile(null);
+          setFamilyInfo(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   function onFamilyLinked() {
@@ -963,19 +987,20 @@ export default function VoterProfile() {
       {showEditModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={() => setShowEditModal(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-          <div style={{ position: 'relative', background: 'white', borderRadius: 16, padding: 28, width: 640, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+          <div style={{ position: 'relative', background: 'white', borderRadius: 16, padding: 28, width: 720, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Edit Profile / प्रोफाइल संपादित करा</h3>
-                <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Update voter contact and profile details</div>
+                <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Update name, contact, and profile details</div>
               </div>
               <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
             </div>
             <VoterProfileEditForm
               voter={voter}
               profile={profile}
-              onSave={(updated) => {
-                setProfile(updated);
+              onSave={(data) => {
+                setProfile(data.profile);
+                if (data.master) setVoter(data.master);
                 setShowEditModal(false);
               }}
               onCancel={() => setShowEditModal(false)}

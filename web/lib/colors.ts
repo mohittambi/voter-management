@@ -46,6 +46,54 @@ export const SR_STATUS_CONFIG: Record<string, { color: string; bg: string; borde
   'Closed / Delivered':        { color: '#37474F', bg: '#ECEFF1', border: '#B0BEC5' },
 };
 
+/** Voter list row states — left border 4px + background (government-style, low saturation) */
+export const VOTER_LIST_ROW = {
+  inactive_record: {
+    bg: '#ECEFF1',
+    border: '#546E7A',
+    hoverBg: '#E3E6EA',
+    labelEn: 'Inactive voter status',
+    labelMr: 'निष्क्रिय मतदार स्थिती',
+  },
+  non_voter: {
+    bg: '#E8EAF0',
+    border: '#607D8B',
+    hoverBg: '#DFE2EB',
+    labelEn: 'Non-voter record',
+    labelMr: 'नॉन-व्होटर नोंद',
+  },
+  validated_complete: {
+    bg: '#E8F5E9',
+    border: '#2E7D32',
+    hoverBg: '#DCF0DD',
+    labelEn: 'Validated, profile complete',
+    labelMr: 'पडताळणी झाली, प्रोफाइल पूर्ण',
+  },
+  validated_incomplete: {
+    bg: '#E0F2F1',
+    border: '#00796B',
+    hoverBg: '#D0EBE8',
+    labelEn: 'Validated, gaps remain',
+    labelMr: 'पडताळणी झाली, काही माहिती थोडी',
+  },
+  needs_review: {
+    bg: '#FAFAF8',
+    border: '#F9A825',
+    hoverBg: '#F2F2EE',
+    labelEn: 'Pending data / validation',
+    labelMr: 'माहिती / पडताळणी बाकी',
+  },
+  ready_to_validate: {
+    bg: '#E3F2FD',
+    border: '#1565C0',
+    hoverBg: '#D4E8FC',
+    labelEn: 'Profile complete, validate',
+    labelMr: 'प्रोफाइल पूर्ण, पडताळणी करा',
+  },
+} as const;
+
+export type VoterListRowCategory = keyof typeof VOTER_LIST_ROW;
+
 // Voter status display config
 export const VOTER_STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   'Active':   { bg: '#E8F5E9', color: '#1B5E20' },

@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { apiUrl } from '../lib/api';
-import VoterProfileEditForm from './VoterProfileEditForm';
+import VoterProfileEditForm, { type ProfileUpdateResult } from './VoterProfileEditForm';
 
 interface VoterEditDrawerProps {
   voter: any;
   open: boolean;
   onClose: () => void;
-  onSaved: (updatedProfile: any) => void;
+  onSaved: (result: ProfileUpdateResult) => void;
 }
 
 export default function VoterEditDrawer({ voter, open, onClose, onSaved }: VoterEditDrawerProps) {
   const [profile, setProfile] = useState<any>(null);
+  const [masterForForm, setMasterForForm] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -19,17 +20,19 @@ export default function VoterEditDrawer({ voter, open, onClose, onSaved }: Voter
     if (!open || !voter?.id) return;
     setLoading(true);
     setProfile(null);
+    setMasterForForm(null);
     fetch(apiUrl(`/api/voter?id=${voter.id}`))
       .then(r => r.json())
       .then(d => {
         setProfile(d.profile || null);
+        setMasterForForm(d.master || voter);
       })
       .finally(() => setLoading(false));
   }, [open, voter?.id]);
 
-  function handleSave(updatedProfile: any) {
+  function handleSave(result: ProfileUpdateResult) {
     setSaving(true);
-    onSaved(updatedProfile);
+    onSaved(result);
     setSaving(false);
     onClose();
   }
@@ -75,7 +78,7 @@ export default function VoterEditDrawer({ voter, open, onClose, onSaved }: Voter
             <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>Loading...</div>
           ) : (
             <VoterProfileEditForm
-              voter={voter}
+              voter={masterForForm || voter}
               profile={profile}
               onSave={handleSave}
               onCancel={onClose}

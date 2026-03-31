@@ -155,8 +155,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (voterMobile) {
       tasks.push(
         sendWhatsApp(voterMobile, {
-          event: 'vedant_work_submitted',
-          bodyParams,
+          event: 'status_document_submitted',
+          bodyParams: [`VED-${String(sr?.ticket_number ?? 0).padStart(6, '0')}`],
         }),
         sendSMS(voterMobile, msg)
       );

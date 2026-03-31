@@ -24,8 +24,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   function isActive(href: string) {
     if (href === '/') return router.pathname === '/';
+    if (href === '/voters') {
+      return router.pathname === '/voters' || router.pathname === '/voter/[id]';
+    }
     return router.pathname.startsWith(href);
   }
+
+  const onVoterProfilePage = router.pathname === '/voter/[id]';
+  const activeNavItem = navItems.find(i => isActive(i.href));
+  const pageTitleEn = onVoterProfilePage
+    ? 'Voter profile'
+    : (activeNavItem?.label ?? 'Dashboard');
+  const pageTitleMr = onVoterProfilePage
+    ? 'मतदार प्रोफाइल'
+    : (activeNavItem?.labelMr ?? 'डॅशबोर्ड');
 
   const sidebarBg = colors.primary; // #0D47A1 — Congress Blue
 
@@ -223,10 +235,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 20, color: colors.textPrimary, fontWeight: 700, letterSpacing: '-0.3px' }}>
-                {navItems.find(i => isActive(i.href))?.label || 'Dashboard'}
+                {pageTitleEn}
                 {' '}
                 <span style={{ fontSize: 13, color: colors.textDisabled, fontWeight: 400 }}>
-                  / {navItems.find(i => isActive(i.href))?.labelMr}
+                  / {pageTitleMr}
                 </span>
               </h2>
               <p style={{ margin: '2px 0 0', fontSize: 12, color: colors.textDisabled }}>

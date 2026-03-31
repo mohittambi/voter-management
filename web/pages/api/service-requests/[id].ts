@@ -8,17 +8,15 @@ import {
   serviceTypeGenitiveMarathi,
   smsVedantWorkCompleted,
 } from '../../../lib/vedantServiceNotifications';
+import {
+  SERVICE_REQUEST_STATUS_ORDER,
+  isValidServiceRequestStatusTransition,
+} from '../../../lib/serviceRequestStatus';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const VALID_STATUSES = [
-  'Document Submitted',
-  'Document Shared to Office',
-  'Work in Progress',
-  'Work Completed',
-  'Closed / Delivered',
-];
+const VALID_STATUSES = SERVICE_REQUEST_STATUS_ORDER;
 
 async function getSessionUser(req: NextApiRequest) {
   const token = req.headers.authorization?.replace('Bearer ', '');
@@ -79,8 +77,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { status } = req.body;
     if (!status) return res.status(400).json({ error: 'status is required' });
-    if (!VALID_STATUSES.includes(status)) {
+    if (!(VALID_STATUSES as readonly string[]).includes(status)) {
       return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` });
+    }
+
+    const { data: existing, error: loadErr } = await supabase
+      .from('service_requests')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (loadErr || !existing) return res.status(404).json({ error: 'Not found' });
+
+    if (existing.status === status) {
+      return res.json(existing);
+    }
+
+    const transition = isValidServiceRequestStatusTransition(existing.status, status);
+    if (transition.ok === false) {
+      return res.status(400).json({ error: transition.message });
     }
 
     const { data: updated, error } = await supabase
@@ -135,7 +150,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
       }
       await Promise.all(tasks);
-    } else if (mobile) {
+    } else if (mobile && status !== 'Work in Progress') {
       const msg = buildStatusNotification(status, ticketDisplay);
       await Promise.all([
         sendWhatsApp(mobile, {

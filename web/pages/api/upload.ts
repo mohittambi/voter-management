@@ -30,14 +30,6 @@ function parseMarathiName(fullName: string): { firstName: string; middleName: st
   return { firstName: parts[1] || '', middleName: parts[2] || '', surname: parts[0] || '' };
 }
 
-function mapRelationship(marathiRelation: string): string {
-  const mapping: Record<string, string> = {
-    'बायको': 'spouse', 'नवरा': 'spouse', 'मुलगा': 'son', 'मुलगी': 'daughter',
-    'आई': 'mother', 'बाप': 'father', 'भाऊ': 'sibling', 'बहीण': 'sibling', 'स्वतः': 'self',
-  };
-  return mapping[marathiRelation?.trim()] || 'other';
-}
-
 async function batchInsert<T extends object>(table: string, rows: T[], onConflict: string, chunkSize = 500): Promise<void> {
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize);
@@ -182,22 +174,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await supabase.from('voter_profiles').upsert(chunk, { onConflict: 'voter_id', ignoreDuplicates: false });
     }
 
-    // ── STEP 7: families (lightweight, only for heads) ────────────────────────
-    const headRecords = validRecords.filter(r => r.kutumb_pramukh === 1 && r['कुटुंबप्रमुख']);
-    let familiesCreated = 0;
-    for (const r of headRecords) {
-      const uuid = voterIdToUUID.get(r.voter_id);
-      if (!uuid) continue;
-      const { data: existing } = await supabase.from('families').select('id').eq('head_voter_id', uuid).maybeSingle();
-      if (!existing) {
-        await supabase.from('families').insert({ head_voter_id: uuid });
-        familiesCreated++;
-      }
-    }
+    // ── STEP 7 skipped: families are added manually in the app (no auto-create from sheet) ──
 
     return res.status(200).json({
       imported: validRecords.length,
-      families_created: familiesCreated,
+      families_created: 0,
       import_id: importData.id,
     });
 

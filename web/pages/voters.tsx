@@ -3,8 +3,13 @@ import { useRouter } from 'next/router';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { useAuth } from '../contexts/AuthContext';
-import { colors, VOTER_STATUS_CONFIG } from '../lib/colors';
+import { colors, VOTER_LIST_ROW, VOTER_STATUS_CONFIG } from '../lib/colors';
 import { apiUrl } from '../lib/api';
+import {
+  VOTER_LIST_LEGEND_ORDER,
+  getVoterListRecordPill,
+  getVoterListRowStyle,
+} from '../lib/voterProfileCompleteness';
 import AddVoterModal from '../components/AddVoterModal';
 import { Search, SlidersHorizontal, Upload, X, AlertTriangle, CheckCircle2, Copy, Phone, UserPlus, Download } from 'lucide-react';
 
@@ -415,6 +420,20 @@ export default function VotersPage() {
             </div>
           </div>
 
+          {/* Row colour legend */}
+          <div style={{ padding: '10px 16px', borderBottom: '1px solid #f1f5f9', background: '#fafbfc', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px 16px', fontSize: 11, color: colors.textSecondary }}>
+            <span style={{ fontWeight: 700, color: '#475569' }}>Record colours / नोंद रंग:</span>
+            {VOTER_LIST_LEGEND_ORDER.map((key) => {
+              const e = VOTER_LIST_ROW[key];
+              return (
+                <span key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} title={`${e.labelEn} — ${e.labelMr}`}>
+                  <span style={{ width: 4, height: 18, borderRadius: 1, background: e.border, flexShrink: 0 }} />
+                  <span>{e.labelEn}</span>
+                </span>
+              );
+            })}
+          </div>
+
           {/* Desktop table */}
           <div style={{ overflowX: 'auto' }} className="table-desktop">
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -424,30 +443,36 @@ export default function VotersPage() {
                   <th style={thStyle} onClick={() => handleSort('voter_id')}>Voter ID / मतदार ID <SortIcon col="voter_id" /></th>
                   <th style={thStyle} onClick={() => handleSort('name_english')}>Name (English) <SortIcon col="name_english" /></th>
                   <th style={thStyle} onClick={() => handleSort('name_marathi')}>नाव (मराठी) <SortIcon col="name_marathi" /></th>
+                  <th style={thStyle}>Rel. / संबंध</th>
                   <th style={thStyle} onClick={() => handleSort('age')}>Age / Gender <SortIcon col="age" /></th>
                   <th style={thStyle} onClick={() => handleSort('booth_number')}>Booth <SortIcon col="booth_number" /></th>
                   {!hideAdminColumns && <th style={thStyle}>Village / गाव</th>}
                   <th style={thStyle}>Mobile / मोबाईल</th>
                   {!hideAdminColumns && <th style={thStyle} onClick={() => handleSort('caste')}>Caste / जात <SortIcon col="caste" /></th>}
+                  <th style={thStyle}>Record / नोंद</th>
                   <th style={thStyle}>Status</th>
                   {!hideAdminColumns && <th style={thStyle}>Staff / कार्यकर्ता</th>}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={hideAdminColumns ? 8 : 11} style={{ padding: 0 }}><Skeleton /></td></tr>
+                  <tr><td colSpan={hideAdminColumns ? 10 : 13} style={{ padding: 0 }}><Skeleton /></td></tr>
                 ) : voters.length === 0 ? (
-                  <tr><td colSpan={hideAdminColumns ? 8 : 11} style={{ ...tdStyle, textAlign: 'center', padding: 48, color: '#94a3b8' }}>
+                  <tr><td colSpan={hideAdminColumns ? 10 : 13} style={{ ...tdStyle, textAlign: 'center', padding: 48, color: '#94a3b8' }}>
                     No voters found / कोणतेही मतदार सापडले नाही
                   </td></tr>
-                ) : voters.map((v, i) => (
+                ) : voters.map((v, i) => {
+                  const rowStyle = getVoterListRowStyle(v);
+                  const pill = getVoterListRecordPill(v);
+                  return (
                   <tr key={v.id} onClick={() => router.push(`/voter/${v.id}`)} style={{
                     cursor: 'pointer',
-                    background: i % 2 === 0 ? 'white' : '#fafafa',
-                    transition: 'background 0.1s',
+                    background: rowStyle.background,
+                    borderLeft: rowStyle.borderLeft,
+                    transition: 'background 0.12s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = colors.primaryLight}
-                  onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'white' : '#FAFAFA'}>
+                  onMouseEnter={e => { e.currentTarget.style.background = rowStyle.hoverBackground; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = rowStyle.background; }}>
                     <td style={{ ...tdStyle, color: '#94a3b8', fontSize: 12 }}>{(page - 1) * pageSize + i + 1}</td>
                     <td style={tdStyle}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -456,7 +481,18 @@ export default function VotersPage() {
                       </div>
                     </td>
                     <td style={{ ...tdStyle, fontWeight: 600 }}>{v.name_english || `${v.first_name || ''} ${v.middle_name || ''} ${v.surname || ''}`.trim()}</td>
-                    <td style={{ ...tdStyle, fontFamily: 'serif' }}>{v.name_marathi}</td>
+                    <td style={{ ...tdStyle, fontFamily: 'serif' }}>
+                      <div>{v.name_marathi || '—'}</div>
+                      {v.first_name_marathi ? (
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }} title="First name (Marathi) / पहिले नाव">
+                          {v.first_name_marathi}
+                          {v.surname_marathi ? ` · ${v.surname_marathi}` : ''}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td style={{ ...tdStyle, fontSize: 12, maxWidth: 100 }} title={v.household_relation_code || undefined}>
+                      {v.household_relation_code || '—'}
+                    </td>
                     <td style={tdStyle}>{v.age && <span style={{ fontWeight: 600 }}>{v.age}</span>}{v.age && v.gender && ' / '}{v.gender}</td>
                     <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600 }}>{v.booth_number}</td>
                     {!hideAdminColumns && <td style={{ ...tdStyle, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.village}</td>}
@@ -477,10 +513,33 @@ export default function VotersPage() {
                       )}
                     </td>
                     {!hideAdminColumns && <td style={{ ...tdStyle, fontSize: 12 }}>{v.caste}</td>}
+                    <td style={{ ...tdStyle, maxWidth: 100 }}>
+                      <span
+                        title={pill.tooltip}
+                        style={{
+                          display: 'inline-block',
+                          padding: '3px 8px',
+                          borderRadius: 8,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          background: VOTER_LIST_ROW[pill.category].bg,
+                          color: VOTER_LIST_ROW[pill.category].border,
+                          border: `1px solid ${VOTER_LIST_ROW[pill.category].border}`,
+                          cursor: 'help',
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {pill.text}
+                      </span>
+                    </td>
                     <td style={tdStyle}><StatusBadge status={v.status} /></td>
                     {!hideAdminColumns && <td style={{ ...tdStyle, fontSize: 12, color: '#64748b' }}>{v.worker_name}</td>}
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
           </div>
@@ -489,14 +548,47 @@ export default function VotersPage() {
           <div className="table-mobile" style={{ display: 'none' }}>
             {loading ? <Skeleton rows={6} /> : voters.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>No voters found / कोणतेही मतदार सापडले नाही</div>
-            ) : voters.map(v => (
-              <div key={v.id} style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9' }}>
+            ) : voters.map(v => {
+              const rowStyle = getVoterListRowStyle(v);
+              const pill = getVoterListRecordPill(v);
+              return (
+              <div
+                key={v.id}
+                style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', background: rowStyle.background, borderLeft: rowStyle.borderLeft, boxSizing: 'border-box' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = rowStyle.hoverBackground; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = rowStyle.background; }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>{v.name_english || `${v.first_name || ''} ${v.surname || ''}`.trim()}</div>
                     <div style={{ fontSize: 13, color: '#64748b', fontFamily: 'serif', marginTop: 2 }}>{v.name_marathi}</div>
+                    {v.first_name_marathi ? (
+                      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+                        {v.first_name_marathi}{v.surname_marathi ? ` · ${v.surname_marathi}` : ''}
+                      </div>
+                    ) : null}
+                    {v.household_relation_code ? (
+                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Rel. / संबंध: {v.household_relation_code}</div>
+                    ) : null}
                   </div>
-                  <StatusBadge status={v.status} />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <span
+                      title={pill.tooltip}
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: 8,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: VOTER_LIST_ROW[pill.category].bg,
+                        color: VOTER_LIST_ROW[pill.category].border,
+                        border: `1px solid ${VOTER_LIST_ROW[pill.category].border}`,
+                        cursor: 'help',
+                      }}
+                    >
+                      {pill.text}
+                    </span>
+                    <StatusBadge status={v.status} />
+                  </div>
                 </div>
                 <div style={{ fontSize: 13, color: '#475569', marginBottom: 6 }}>{v.village} {v.village && v.booth_number ? '·' : ''} Booth {v.booth_number}</div>
                 {v.mobile && (
@@ -510,6 +602,7 @@ export default function VotersPage() {
                   <div style={{ marginTop: 10, padding: '10px 0', borderTop: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
                     <div><span style={{ color: colors.textDisabled }}>Voter ID: </span><span style={{ fontFamily: 'monospace', fontWeight: 600, color: colors.primary }}>{v.voter_id}</span></div>
                     <div><span style={{ color: '#94a3b8' }}>Age: </span>{v.age} / {v.gender}</div>
+                    {v.household_relation_code ? <div><span style={{ color: '#94a3b8' }}>Rel.: </span>{v.household_relation_code}</div> : null}
                     <div><span style={{ color: '#94a3b8' }}>Caste: </span>{v.caste || '—'}</div>
                     <div><span style={{ color: '#94a3b8' }}>Staff: </span>{v.worker_name || '—'}</div>
                     {v.mobile_secondary && <div><span style={{ color: '#94a3b8' }}>Alt Mobile: </span>{v.mobile_secondary}</div>}
@@ -526,7 +619,8 @@ export default function VotersPage() {
                   {expandedRow === v.id ? '▲ Less' : '▼ More details'}
                 </button>
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {/* Pagination */}

@@ -58,6 +58,12 @@ function templateNameForEvent(event: WhatsAppEvent): string | undefined {
   return name || undefined;
 }
 
+function maskRecipient(mobile: string): string {
+  const digits = mobile.replaceAll(/\D/g, '');
+  if (digits.length <= 4) return digits || 'unknown';
+  return `${'*'.repeat(Math.max(digits.length - 4, 0))}${digits.slice(-4)}`;
+}
+
 /**
  * WhatsApp via Way2Smart Cloud API (template messages).
  * Configure WAY2SMART_* and per-event template env vars; SMS remains on 2Factor.
@@ -73,7 +79,11 @@ export async function sendWhatsApp(mobile: string, options: SendWhatsAppOptions)
   const templateName = templateNameForEvent(options.event);
   if (!templateName) {
     const envKey = EVENT_TEMPLATE_ENV_KEYS[options.event];
-    console.warn(`[messaging] ${envKey} not set, skipping WhatsApp for event=${options.event}`);
+    console.warn(
+      `[messaging] missing template config: event=${options.event}, env=${envKey}, recipient=${maskRecipient(
+        mobile
+      )}; skipping WhatsApp`
+    );
     return;
   }
 

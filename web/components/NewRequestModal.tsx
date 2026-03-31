@@ -89,9 +89,6 @@ export default function NewRequestModal({
     if (isMinorApplicant) {
       if (!minorFirstName.trim() || !minorSurname.trim()) return setError('First name and surname required / नाव आवश्यक');
       if (!selectedRefVoter) return setError('Please select reference voter (e.g. father/mother) / संदर्भ मतदार निवडा');
-      // #region agent log
-      fetch('http://127.0.0.1:7245/ingest/3117ed0b-c314-4a71-bd4e-a398b9675dff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'NewRequestModal.tsx:submit', message: 'minor submit started', data: { hypothesisId: 'H1', hasRefVoter: !!selectedRefVoter, refVoterId: selectedRefVoter?.id }, timestamp: Date.now() }) }).catch(() => {});
-      // #endregion
       setSubmitting(true);
       setError('');
       try {
@@ -111,13 +108,7 @@ export default function NewRequestModal({
         if (!regRes.ok) { const err = await regRes.json(); throw new Error(err.error); }
         const registered = await regRes.json();
         voterId = registered.id;
-        // #region agent log
-        fetch('http://127.0.0.1:7245/ingest/3117ed0b-c314-4a71-bd4e-a398b9675dff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'NewRequestModal.tsx:submit', message: 'register ok', data: { hypothesisId: 'H4', voterId: registered?.id }, timestamp: Date.now() }) }).catch(() => {});
-        // #endregion
       } catch (err: any) {
-        // #region agent log
-        fetch('http://127.0.0.1:7245/ingest/3117ed0b-c314-4a71-bd4e-a398b9675dff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'NewRequestModal.tsx:submit', message: 'register failed', data: { hypothesisId: 'H3', error: err?.message }, timestamp: Date.now() }) }).catch(() => {});
-        // #endregion
         setError(err.message || 'Failed to register applicant / अर्जदार नोंदणी अयशस्वी');
         setSubmitting(false);
         return;
@@ -356,8 +347,15 @@ export default function NewRequestModal({
           voter={effectiveVoter}
           open={showEditDrawer}
           onClose={() => setShowEditDrawer(false)}
-          onSaved={(updatedProfile) => {
-            setSelectedVoter((prev: any) => (prev ? { ...prev, village: updatedProfile?.village ?? prev.village, mobile: updatedProfile?.mobile ?? prev.mobile } : prev));
+          onSaved={(data) => {
+            setSelectedVoter((prev: any) => {
+              if (!prev) return prev;
+              const p = data.profile;
+              const m = data.master;
+              const next = { ...prev, village: p?.village ?? prev.village, mobile: p?.mobile ?? prev.mobile };
+              if (m && typeof m === 'object') Object.assign(next, m);
+              return next;
+            });
             setShowEditDrawer(false);
           }}
         />

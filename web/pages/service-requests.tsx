@@ -6,17 +6,23 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../contexts/AuthContext';
 import { colors, SR_STATUS_CONFIG } from '../lib/colors';
 import { apiUrl } from '../lib/api';
+import {
+  SERVICE_REQUEST_STATUS_ORDER,
+  getNextServiceRequestStatus,
+} from '../lib/serviceRequestStatus';
 import { X, SlidersHorizontal, Plus, MessageCircle, Clock, AlertTriangle, FileDown } from 'lucide-react';
 
-const SR_STATUSES = [
-  'Document Submitted',
-  'Document Shared to Office',
-  'Work in Progress',
-  'Work Completed',
-  'Closed / Delivered',
-];
-
 const STATUS_STYLES = SR_STATUS_CONFIG;
+
+function statusSelectOptions(currentStatus: string) {
+  const curIdx = SERVICE_REQUEST_STATUS_ORDER.findIndex((x) => x === currentStatus);
+  return SERVICE_REQUEST_STATUS_ORDER.map((s) => {
+    const optIdx = SERVICE_REQUEST_STATUS_ORDER.indexOf(s);
+    const isNext = optIdx === curIdx + 1;
+    const disabled = optIdx < curIdx || optIdx === curIdx || !isNext;
+    return { value: s, disabled };
+  });
+}
 
 function StatusBadge({ status, onClick }: { status: string; onClick?: () => void }) {
   const s = STATUS_STYLES[status] || { bg: colors.pageBg, color: colors.textSecondary, border: colors.borderLight };
@@ -136,8 +142,9 @@ export default function ServiceRequestsPage() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error('Failed to update status');
-      setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: newStatus } : r));
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Failed to update status');
+      setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: newStatus, updated_at: body.updated_at || r.updated_at } : r));
     } catch (e: any) {
       alert(`Error / त्रुटी: ${e.message}`);
     } finally {
@@ -204,7 +211,7 @@ export default function ServiceRequestsPage() {
               <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Status / स्थिती</label>
               <select value={statusFilter} onChange={e => handleFilterChange('status', e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, background: 'white' }}>
                 <option value="">All statuses</option>
-                {SR_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                {SERVICE_REQUEST_STATUS_ORDER.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div>
@@ -286,20 +293,29 @@ export default function ServiceRequestsPage() {
                           status={r.status}
                           onClick={() => {
                             setStatusOverlayRequestId(r.id);
-                            setStatusOverlayDraft(r.status);
+                            const next = getNextServiceRequestStatus(r.status);
+                            setStatusOverlayDraft(next ?? r.status);
                           }}
                         />
                         {statusOverlayRequestId === r.id && (
                           <>
                             <div onClick={() => setStatusOverlayRequestId(null)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
                             <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 51, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', padding: 12, minWidth: 220 }}>
-                              <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 6 }}>New status / नवीन स्थिती</label>
-                              <select value={statusOverlayDraft} onChange={e => setStatusOverlayDraft(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 12, background: 'white', marginBottom: 10 }}>
-                                {SR_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                              </select>
-                              <button onClick={() => updateStatus(r.id, statusOverlayDraft)} disabled={statusUpdating === r.id} className="btn-primary" style={{ width: '100%', padding: '8px 12px', fontSize: 12 }}>
-                                {statusUpdating === r.id ? 'Updating...' : 'Update Status / स्थिती अपडेट करा'}
-                              </button>
+                              <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 6 }}>Advance one step / पुढील स्थिती</label>
+                              {getNextServiceRequestStatus(r.status) ? (
+                                <>
+                                  <select value={statusOverlayDraft} onChange={e => setStatusOverlayDraft(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 12, background: 'white', marginBottom: 10 }}>
+                                    {statusSelectOptions(r.status).map(({ value, disabled }) => (
+                                      <option key={value} value={value} disabled={disabled}>{value}</option>
+                                    ))}
+                                  </select>
+                                  <button onClick={() => updateStatus(r.id, statusOverlayDraft)} disabled={statusUpdating === r.id} className="btn-primary" style={{ width: '100%', padding: '8px 12px', fontSize: 12 }}>
+                                    {statusUpdating === r.id ? 'Updating...' : 'Update Status / स्थिती अपडेट करा'}
+                                  </button>
+                                </>
+                              ) : (
+                                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>Final status — no further changes / अंतिम स्थिती</div>
+                              )}
                             </div>
                           </>
                         )}
@@ -348,7 +364,12 @@ export default function ServiceRequestsPage() {
                     <div style={{ fontSize: 12, color: '#64748b' }}>{r.service_type_name}</div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                    <StatusBadge status={r.status} onClick={() => { setExpandedRow(r.id); setStatusOverlayRequestId(r.id); setStatusOverlayDraft(r.status); }} />
+                    <StatusBadge status={r.status} onClick={() => {
+                      setExpandedRow(r.id);
+                      setStatusOverlayRequestId(r.id);
+                      const next = getNextServiceRequestStatus(r.status);
+                      setStatusOverlayDraft(next ?? r.status);
+                    }} />
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <button onClick={e => { e.stopPropagation(); window.open(apiUrl(`/api/service-requests/${r.id}/pdf`), '_blank', 'noopener'); }} title="Download PDF" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}><FileDown size={18} color="#059669" /></button>
                       {r.mobile && (
@@ -366,15 +387,25 @@ export default function ServiceRequestsPage() {
                     <div style={{ marginBottom: 10 }}>
                       <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Update Status:</label>
                       {statusOverlayRequestId === r.id ? (
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <select value={statusOverlayDraft} onChange={e => setStatusOverlayDraft(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 13 }}>
-                            {SR_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                          </select>
-                          <button onClick={() => updateStatus(r.id, statusOverlayDraft)} disabled={statusUpdating === r.id} className="btn-primary" style={{ padding: '8px 14px', fontSize: 12 }}>{statusUpdating === r.id ? '...' : 'Update'}</button>
-                          <button onClick={() => setStatusOverlayRequestId(null)} style={{ padding: '8px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
-                        </div>
+                        getNextServiceRequestStatus(r.status) ? (
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <select value={statusOverlayDraft} onChange={e => setStatusOverlayDraft(e.target.value)} style={{ flex: 1, minWidth: 140, padding: '8px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 13 }}>
+                              {statusSelectOptions(r.status).map(({ value, disabled }) => (
+                                <option key={value} value={value} disabled={disabled}>{value}</option>
+                              ))}
+                            </select>
+                            <button onClick={() => updateStatus(r.id, statusOverlayDraft)} disabled={statusUpdating === r.id} className="btn-primary" style={{ padding: '8px 14px', fontSize: 12 }}>{statusUpdating === r.id ? '...' : 'Update'}</button>
+                            <button onClick={() => setStatusOverlayRequestId(null)} style={{ padding: '8px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 12, color: '#94a3b8' }}>Final status — no further changes</div>
+                        )
                       ) : (
-                        <StatusBadge status={r.status} onClick={() => { setStatusOverlayRequestId(r.id); setStatusOverlayDraft(r.status); }} />
+                        <StatusBadge status={r.status} onClick={() => {
+                          setStatusOverlayRequestId(r.id);
+                          const next = getNextServiceRequestStatus(r.status);
+                          setStatusOverlayDraft(next ?? r.status);
+                        }} />
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
