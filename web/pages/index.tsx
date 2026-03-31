@@ -4,14 +4,15 @@ import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { colors, SR_STATUS_CONFIG } from '../lib/colors';
 import { apiUrl } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 import React from 'react';
-import { Users, FileText, Home, UserCheck, MapPin, ClipboardList, User, Plus, Settings, AlertTriangle } from 'lucide-react';
+import { Users, FileText, Home, UserCheck, MapPin, ClipboardList, User, Plus, Settings, AlertTriangle, Briefcase } from 'lucide-react';
 
 const SR_STATUSES = Object.keys(SR_STATUS_CONFIG);
 
 function SkeletonCard() {
   return (
-    <div style={{ background: colors.surface, borderRadius: 12, padding: '18px 20px', border: `1px solid ${colors.borderLight}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+    <div style={{ background: colors.surface, borderRadius: 12, padding: '18px 20px', border: `1px solid ${colors.borderLight}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}>
       <div style={{ height: 11, width: '55%', background: '#E0E0E0', borderRadius: 4, marginBottom: 10, animation: 'pulse 1.5s infinite' }} />
       <div style={{ height: 26, width: '38%', background: '#E0E0E0', borderRadius: 4, animation: 'pulse 1.5s infinite' }} />
     </div>
@@ -30,6 +31,7 @@ function StatCard({ label, labelMr, value, icon, iconBg, iconColor, numColor, li
       transition: 'box-shadow 0.2s, transform 0.2s',
       cursor: link ? 'pointer' : 'default',
       textDecoration: 'none', color: 'inherit',
+      height: '100%', boxSizing: 'border-box',
     }}
     onMouseEnter={e => { if (link) { e.currentTarget.style.boxShadow = '0 4px 16px rgba(13,71,161,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
     onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
@@ -45,10 +47,17 @@ function StatCard({ label, labelMr, value, icon, iconBg, iconColor, numColor, li
       </div>
     </div>
   );
-  return link ? <Link href={link} style={{ textDecoration: 'none' }}>{content}</Link> : content;
+  return link ? (
+    <Link href={link} style={{ textDecoration: 'none', display: 'block', height: '100%', minWidth: 0 }}>
+      {content}
+    </Link>
+  ) : (
+    content
+  );
 }
 
 export default function Dashboard() {
+  const { role } = useAuth();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,14 +86,35 @@ export default function Dashboard() {
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>Voter Metrics</h2>
             <span style={{ fontSize: 13, color: colors.textDisabled }}>/ मतदार आकडेवारी</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-            {loading ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />) : (<>
-              <StatCard label="Total Voters"          labelMr="एकूण मतदार"       value={stats?.voters?.total ?? 0}    icon={<Users size={22} />}      iconBg={colors.primaryLight} iconColor={colors.primary}   numColor={colors.primary}   link="/voters" />
-              <StatCard label="Voter Profiles"        labelMr="मतदार प्रोफाइल"  value={stats?.voters?.profiles ?? 0} icon={<FileText size={22} />}   iconBg="#EDE7F6"             iconColor="#4527A0"          numColor="#4527A0"          link="/voters" />
-              <StatCard label="Families"              labelMr="कुटुंबे"          value={stats?.voters?.families ?? 0} icon={<Home size={22} />}       iconBg="#E0F2F1"             iconColor={colors.accent}   numColor={colors.accent}    link="/voters" />
-              <StatCard label="Staff / Karayakartas" labelMr="कार्यकर्ते"      value={stats?.voters?.workers ?? 0}  icon={<UserCheck size={22} />}  iconBg="#E8F5E9"             iconColor={colors.success}   numColor={colors.success}   link="/voters?view=staff" />
-              <StatCard label="Villages"              labelMr="गावे"             value={stats?.voters?.villages ?? 0} icon={<MapPin size={22} />}     iconBg="#FFF8E1"             iconColor="#E65100"          numColor="#E65100"          />
-            </>)}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 170px), 1fr))',
+              gap: 14,
+              alignItems: 'stretch',
+            }}
+          >
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+            ) : (
+              <>
+                <StatCard label="Total Voters" labelMr="एकूण मतदार" value={stats?.voters?.total ?? 0} icon={<Users size={22} />} iconBg={colors.primaryLight} iconColor={colors.primary} numColor={colors.primary} link="/voters" />
+                <StatCard label="Voter Profiles" labelMr="मतदार प्रोफाइल" value={stats?.voters?.profiles ?? 0} icon={<FileText size={22} />} iconBg="#EDE7F6" iconColor="#4527A0" numColor="#4527A0" link="/voters" />
+                <StatCard label="Families" labelMr="कुटुंबे" value={stats?.voters?.families ?? 0} icon={<Home size={22} />} iconBg="#E0F2F1" iconColor={colors.accent} numColor={colors.accent} link="/voters" />
+                <StatCard label="Villages" labelMr="गावे" value={stats?.voters?.villages ?? 0} icon={<MapPin size={22} />} iconBg="#FFF8E1" iconColor="#E65100" numColor="#E65100" />
+                <StatCard label="Karyakarta" labelMr="कार्यकर्ते" value={stats?.voters?.workers ?? 0} icon={<UserCheck size={22} />} iconBg="#E8F5E9" iconColor={colors.success} numColor={colors.success} link="/workers" />
+                <StatCard
+                  label="Karamchari"
+                  labelMr="कर्मचारी"
+                  value={stats?.voters?.employees ?? 0}
+                  icon={<Briefcase size={22} />}
+                  iconBg="#ECEFF1"
+                  iconColor="#37474F"
+                  numColor="#37474F"
+                  link={role === 'admin' ? '/employees' : undefined}
+                />
+              </>
+            )}
           </div>
         </div>
 

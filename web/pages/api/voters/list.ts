@@ -178,7 +178,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       filtered = filtered.filter(r => r.worker_id === workerId.trim());
     }
 
-    return res.json({ data: filtered, total: count || 0, page: pg, pageSize: ps });
+    // App family linkage (families / family_members) — list rows are always flat; these fields clarify head vs linked members
+    const pageIds = filtered.map(r => r.id).filter(Boolean) as string[];
+    let enriched = filtered.map(r => ({
+      ...r,
+      is_family_head: false,
+      family_linked_member_count: 0,
+    }));
+    if (pageIds.length > 0) {
+      const { data: famRows } = await supabase
+        .from('families')
+        .select('id, head_voter_id')
+        .in('head_voter_id', pageIds)
+        .order('id', { ascending: true });
+      const headToFamily = new Map<string, string>();
+      for (const f of famRows || []) {
+        const hid = f.head_voter_id as string;
+        const fid = f.id as string;
+        if (hid && fid && !headToFamily.has(hid)) headToFamily.set(hid, fid);
+      }
+      const familyIds = Array.from(new Set(headToFamily.values()));
+      const memberCountByFamily: Record<string, number> = {};
+      if (familyIds.length > 0) {
+        const { data: memRows } = await supabase
+          .from('family_members')
+          .select('family_id')
+          .in('family_id', familyIds);
+        for (const m of memRows || []) {
+          const fid = m.family_id as string;
+          memberCountByFamily[fid] = (memberCountByFamily[fid] || 0) + 1;
+        }
+      }
+      enriched = filtered.map(r => {
+        const famId = headToFamily.get(r.id);
+        return {
+          ...r,
+          is_family_head: !!famId,
+          family_linked_member_count: famId ? memberCountByFamily[famId] || 0 : 0,
+        };
+      });
+    }
+
+    return res.json({ data: enriched, total: count || 0, page: pg, pageSize: ps });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.message || 'Failed to fetch voters' });

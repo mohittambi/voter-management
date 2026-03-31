@@ -1,4 +1,4 @@
-// Central color palette for the Voter Management Portal
+// Central color palette for the Voter Management Portal — see docs/DESIGN_GUIDELINES.md
 // Primary = Congress Blue. Saffron/orange entirely avoided.
 
 export const colors = {
@@ -6,6 +6,8 @@ export const colors = {
   primary:         '#0D47A1',
   primaryHover:    '#1565C0',
   primaryLight:    '#E3F0FF',
+  /** Light border on primary-tinted panels (aligns with status pill borders) */
+  primaryBorderLight: '#90CAF9',
 
   // Accent — Teal
   accent:          '#00796B',
@@ -31,8 +33,14 @@ export const colors = {
 
   // Typography
   textPrimary:     '#1A1A1A',
+  /** Page titles / emphasized labels (slate; used across profile and tables) */
+  textHeading:     '#0f172a',
   textSecondary:   '#424242',
   textDisabled:    '#9E9E9E',
+  /** Supporting / caption text (slate) */
+  textMuted:       '#64748b',
+  /** Timestamps, dividers, empty-state hint text */
+  textSubtle:      '#94a3b8',
   textOnPrimary:   '#FFFFFF',
   textOnAccent:    '#FFFFFF',
 };

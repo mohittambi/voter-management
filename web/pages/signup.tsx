@@ -131,7 +131,7 @@ export default function SignupPage() {
               </select>
               <p style={{ margin: '8px 0 0', fontSize: 13, color: '#64748b' }}>
                 {role === 'admin' 
-                  ? '✓ Full system access including uploads, services, reports' 
+                  ? '✓ Full system access including voter management, services, reports' 
                   : '✓ Can search voters, create service requests, update status'}
               </p>
             </div>

@@ -26,3 +26,4 @@ dist/
 *.log
 .vercel
 .env*.local
+finalVoterList.xlsx

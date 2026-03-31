@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { UserCheck, Phone, Users, ChevronDown, ChevronUp, Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiUrl } from '../lib/api';
+import { colors } from '../lib/colors';
 import { supabase } from '../contexts/AuthContext';
 
 type AssignedVoter = {
@@ -221,7 +222,7 @@ export default function WorkersPage() {
             <div key={worker.id} style={{ background: 'white', borderRadius: 10, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               <div style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>{worker.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: colors.textHeading }}>{worker.name}</div>
                   <div style={{ marginTop: 4, fontSize: 13, color: '#334155', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     {worker.mobile ? <><Phone size={13} /> {worker.mobile}</> : 'No mobile'}
                   </div>
@@ -233,7 +234,7 @@ export default function WorkersPage() {
                   <button
                     type="button"
                     onClick={() => setExpanded(prev => ({ ...prev, [worker.id]: !isOpen }))}
-                    style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                    style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: colors.textHeading, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                   >
                     {isOpen ? <><ChevronUp size={12} /> Hide Voters / मतदार लपवा</> : <><ChevronDown size={12} /> Show Voters / मतदार दाखवा</>}
                   </button>
@@ -325,8 +326,8 @@ export default function WorkersPage() {
                       <tbody>
                         {worker.voters.map((voter, idx) => (
                           <tr key={`${worker.id}-${voter.id}-${idx}`} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                            <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
-                              <Link href={`/voter/${voter.id}`} style={{ color: '#0f172a', textDecoration: 'none' }}>{voter.name || 'Unnamed voter'}</Link>
+                            <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, color: colors.textHeading }}>
+                              <Link href={`/voter/${voter.id}`} style={{ color: colors.textHeading, textDecoration: 'none' }}>{voter.name || 'Unnamed voter'}</Link>
                             </td>
                             <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', color: '#334155' }}>{voter.voter_id || '—'}</td>
                             <td style={{ padding: '10px 14px', fontSize: 13, color: '#334155' }}>{voter.mobile || '—'}</td>
@@ -376,7 +377,7 @@ export default function WorkersPage() {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: colors.textHeading, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <UserCheck size={20} /> Karyakarta / कार्यकर्ता
             </h2>
             <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Worker assignment mapping list / कार्यकर्ता मतदार मॅपिंग यादी</div>

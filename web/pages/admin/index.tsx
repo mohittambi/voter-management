@@ -76,7 +76,7 @@ function UsersTab() {
               {users.map((u, i) => (
                 <tr key={u.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
                   <td style={tdStyle}>
-                    <div style={{ fontWeight: 600, color: '#0f172a' }}>{u.email}</div>
+                    <div style={{ fontWeight: 600, color: colors.textHeading }}>{u.email}</div>
                     <div style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace' }}>{u.id.slice(0, 8)}...</div>
                   </td>
                   <td style={tdStyle}>

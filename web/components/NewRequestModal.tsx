@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../contexts/AuthContext';
 import { apiUrl } from '../lib/api';
+import { colors } from '../lib/colors';
 import { X, Check, Pencil, UserPlus, Paperclip } from 'lucide-react';
 import VoterEditDrawer from './VoterEditDrawer';
 
@@ -231,7 +232,7 @@ export default function NewRequestModal({
             ) : effectiveVoter ? (
               <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: colors.textHeading, display: 'flex', alignItems: 'center', gap: 8 }}>
                     {effectiveVoter.name_english || `${effectiveVoter.first_name || ''} ${effectiveVoter.surname || ''}`.trim()}
                     <button
                       type="button"

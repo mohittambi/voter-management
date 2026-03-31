@@ -11,7 +11,7 @@ import {
   getVoterListRowStyle,
 } from '../lib/voterProfileCompleteness';
 import AddVoterModal from '../components/AddVoterModal';
-import { Search, SlidersHorizontal, Upload, X, AlertTriangle, CheckCircle2, Copy, Phone, UserPlus, Download } from 'lucide-react';
+import { Search, SlidersHorizontal, X, AlertTriangle, CheckCircle2, Copy, Phone, UserPlus, Download } from 'lucide-react';
 
 const PAGE_SIZES = [25, 50, 100];
 const STATUS_OPTIONS = ['Active', 'मयत', 'दुबार', 'बेपत्ता'];
@@ -84,79 +84,6 @@ function CallButton({ mobile }: { mobile: string }) {
   );
 }
 
-interface UploadModalProps { onClose: () => void; onSuccess: () => void; }
-function UploadModal({ onClose, onSuccess }: UploadModalProps) {
-  const [fileName, setFileName] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<{ imported: number; families: number } | null>(null);
-
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFileName(file.name);
-    setUploading(true);
-    const fd = new FormData();
-    fd.append('file', file);
-    try {
-      const res = await fetch(apiUrl('/api/upload'), { method: 'POST', body: fd });
-      if (res.ok) {
-        const d = await res.json();
-        setResult({ imported: d.imported, families: d.families_created || 0 });
-        onSuccess();
-      } else {
-        const err = await res.json();
-        alert(`Upload failed / अपलोड अयशस्वी: ${err.error || 'Unknown error'}`);
-      }
-    } catch {
-      alert('Upload failed / अपलोड अयशस्वी');
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-      <div style={{ position: 'relative', background: 'white', borderRadius: 16, padding: 32, width: 460, maxWidth: '95vw', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Upload Voter List</h3>
-            <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>मतदार यादी अपलोड करा</div>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
-        </div>
-        {result ? (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><CheckCircle2 size={48} color="#10b981" /></div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#065f46', marginBottom: 8 }}>Upload Successful / अपलोड यशस्वी!</div>
-            <div style={{ fontSize: 14, color: '#475569' }}>{result.imported} voters imported / {result.imported} मतदार आयात</div>
-            <div style={{ fontSize: 14, color: '#475569' }}>{result.families} families linked / {result.families} कुटुंबे जोडली</div>
-            <button onClick={onClose} className="btn-primary" style={{ marginTop: 20 }}>Close / बंद करा</button>
-          </div>
-        ) : (
-          <>
-            <div style={{ border: '2px dashed #cbd5e1', borderRadius: 12, padding: 32, textAlign: 'center', background: '#f8fafc', cursor: uploading ? 'not-allowed' : 'pointer' }}>
-              <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} disabled={uploading} style={{ display: 'none' }} id="upload-file" />
-              <label htmlFor="upload-file" style={{ cursor: uploading ? 'not-allowed' : 'pointer' }}>
-                <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Upload size={40} color={uploading ? '#3b82f6' : '#94a3b8'} /></div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', marginBottom: 6 }}>
-                  {uploading ? 'Uploading... / अपलोड होत आहे...' : fileName ? fileName : 'Click to select file / फाइल निवडण्यासाठी क्लिक करा'}
-                </div>
-                <div style={{ fontSize: 13, color: '#94a3b8' }}>Supports .xlsx, .xls, .csv | Manoli format</div>
-              </label>
-            </div>
-            {!uploading && !fileName && (
-              <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 12, marginBottom: 0 }}>
-                Admin only / केवळ प्रशासकासाठी
-              </p>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function VotersPage() {
   const router = useRouter();
   const { role } = useAuth();
@@ -185,7 +112,6 @@ export default function VotersPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [showUpload, setShowUpload] = useState(false);
   const [showAddVoter, setShowAddVoter] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -318,9 +244,6 @@ export default function VotersPage() {
           </button>
           <button onClick={() => setShowAddVoter(true)} className="btn-primary" style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <UserPlus size={14} /> Add Voter
-          </button>
-          <button onClick={() => setShowUpload(true)} style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none', borderRadius: 8, color: 'white', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Upload size={14} /> Upload
           </button>
           <button onClick={handleExport} style={{ padding: '10px 18px', fontSize: 14, whiteSpace: 'nowrap', border: '1px solid #d1d5db', borderRadius: 8, background: 'white', color: '#374151', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Download size={14} /> Export
@@ -560,7 +483,7 @@ export default function VotersPage() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>{v.name_english || `${v.first_name || ''} ${v.surname || ''}`.trim()}</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: colors.textHeading }}>{v.name_english || `${v.first_name || ''} ${v.surname || ''}`.trim()}</div>
                     <div style={{ fontSize: 13, color: '#64748b', fontFamily: 'serif', marginTop: 2 }}>{v.name_marathi}</div>
                     {v.first_name_marathi ? (
                       <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
@@ -649,7 +572,6 @@ export default function VotersPage() {
         </div>
 
         {showAddVoter && <AddVoterModal onClose={() => setShowAddVoter(false)} onSuccess={() => { setShowAddVoter(false); fetchVoters(); }} />}
-        {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={() => fetchVoters()} />}
 
         <style>{`
           @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import DashboardLayout from '../../components/DashboardLayout';
 import FamilyLinkModal from '../../src/components/FamilyLinkModal';
+import FamilyReassignHeadModal from '../../src/components/FamilyReassignHeadModal';
 import FamilyMoveModal from '../../src/components/FamilyMoveModal';
 import VoterProfileEditForm from '../../components/VoterProfileEditForm';
 import NewRequestModal from '../../components/NewRequestModal';
@@ -62,7 +63,7 @@ function DocumentsTab({ voterId, documents, loading, onRefresh }: { voterId: str
 
   return (
     <div>
-      <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: colors.textHeading, display: 'flex', alignItems: 'center', gap: 8 }}>
         <Paperclip size={20} /> दस्तऐवज / Documents
       </h2>
       <div style={{ marginBottom: 24, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -72,14 +73,14 @@ function DocumentsTab({ voterId, documents, loading, onRefresh }: { voterId: str
           <option value="Other">Other</option>
         </select>
         <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleUpload} disabled={uploading} style={{ fontSize: 13 }} />
-        {uploading && <span style={{ fontSize: 13, color: '#64748b' }}>Uploading...</span>}
+        {uploading && <span style={{ fontSize: 13, color: colors.textMuted }}>Uploading...</span>}
       </div>
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>Loading...</div>
+        <div style={{ textAlign: 'center', padding: 40, color: colors.textSubtle }}>Loading...</div>
       ) : documents.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 48, background: '#F5F7FA', borderRadius: 8 }}>
-          <Paperclip size={40} color="#94a3b8" style={{ marginBottom: 12 }} />
-          <p style={{ margin: 0, color: '#64748b', fontSize: 14 }}>No documents uploaded yet</p>
+        <div style={{ textAlign: 'center', padding: 48, background: colors.pageBg, borderRadius: 8 }}>
+          <Paperclip size={40} color={colors.textSubtle} style={{ marginBottom: 12 }} />
+          <p style={{ margin: 0, color: colors.textMuted, fontSize: 14 }}>No documents uploaded yet</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -88,7 +89,7 @@ function DocumentsTab({ voterId, documents, loading, onRefresh }: { voterId: str
               <div>
                 <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: '#e0f2fe', color: '#0369a1', marginRight: 8 }}>{d.document_type}</span>
                 <span style={{ fontSize: 14, fontWeight: 500 }}>{d.file_name || 'Document'}</span>
-                <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>{new Date(d.created_at).toLocaleDateString()}</span>
+                <span style={{ fontSize: 12, color: colors.textSubtle, marginLeft: 8 }}>{new Date(d.created_at).toLocaleDateString()}</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
@@ -124,6 +125,7 @@ export default function VoterProfile() {
   const [activeTab, setActiveTab] = useState<TabType>('personal');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showReassignHeadModal, setShowReassignHeadModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moveModalMember, setMoveModalMember] = useState<any>(null);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
@@ -180,19 +182,61 @@ export default function VoterProfile() {
     };
   }, [id]);
 
-  function onFamilyLinked() {
-    setShowLinkModal(false);
+  function refetchFamilyInfo() {
+    if (!id) return;
     fetch(apiUrl(`/api/family/info?voter_id=${id}`))
       .then(r => r.json())
       .then(d => setFamilyInfo(d));
   }
 
+  async function dissolveHousehold() {
+    if (!familyInfo?.family_id || familyInfo.role !== 'head' || !voter?.id) return;
+    const n = familyInfo.members?.length || 0;
+    const block =
+      n > 0
+        ? `This removes the whole household (${n} linked member${n === 1 ? '' : 's'} will no longer be in this family). The portal will treat everyone as having no linked family.\n\nTo keep members, use “Change household” first to pick a new lead.\n\nContinue?`
+        : 'This removes this household from the portal. Continue?';
+    if (!confirm(block)) return;
+    const res = await fetch(apiUrl('/api/family/dissolve'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ family_id: familyInfo.family_id, head_voter_id: voter.id }),
+    });
+    if (res.ok) {
+      refetchFamilyInfo();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert(err?.error || 'Could not remove household');
+    }
+  }
+
+  async function unlinkFamilyMember(member: { id: string; name?: string }) {
+    if (!familyInfo?.family_id) return;
+    const label = member.name || 'this member';
+    if (
+      !confirm(
+        `Remove ${label} from this family? They will no longer appear under this household.`
+      )
+    ) {
+      return;
+    }
+    const res = await fetch(apiUrl('/api/family/unlink'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ family_id: familyInfo.family_id, member_voter_id: member.id }),
+    });
+    if (res.ok) {
+      refetchFamilyInfo();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert(err?.error || 'Failed to remove member');
+    }
+  }
+
   function onFamilyMoved() {
     setShowMoveModal(false);
     setMoveModalMember(null);
-    fetch(apiUrl(`/api/family/info?voter_id=${id}`))
-      .then(r => r.json())
-      .then(d => setFamilyInfo(d));
+    refetchFamilyInfo();
   }
 
   function openMoveModal(member?: any) {
@@ -226,7 +270,7 @@ export default function VoterProfile() {
       <DashboardLayout>
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
           <div className="spinner" style={{ margin: '0 auto 16px' }}></div>
-          <p style={{ margin: 0, color: '#64748b' }}>Loading voter profile...</p>
+          <p style={{ margin: 0, color: colors.textMuted }}>Loading voter profile...</p>
         </div>
       </DashboardLayout>
     );
@@ -237,7 +281,7 @@ export default function VoterProfile() {
       <DashboardLayout>
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><XCircle size={48} color="#ef4444" /></div>
-          <p style={{ margin: 0, color: '#64748b' }}>Voter not found</p>
+          <p style={{ margin: 0, color: colors.textMuted }}>Voter not found</p>
         </div>
       </DashboardLayout>
     );
@@ -256,10 +300,10 @@ export default function VoterProfile() {
   return (
     <DashboardLayout>
       {/* Breadcrumb */}
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#64748b' }}>
-        <Link href="/voters" style={{ color: '#0D47A1', textDecoration: 'none' }}>मतदार / Voters</Link>
+      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: colors.textMuted }}>
+        <Link href="/voters" style={{ color: colors.primary, textDecoration: 'none' }}>मतदार / Voters</Link>
         <span>→</span>
-        <span style={{ color: '#0f172a', fontWeight: 500 }}>
+        <span style={{ color: colors.textHeading, fontWeight: 500 }}>
           {voter.name_marathi || `${voter.first_name || ''} ${voter.surname || ''}`}
         </span>
       </div>
@@ -272,7 +316,7 @@ export default function VoterProfile() {
             width: 80,
             height: 80,
             borderRadius: 16,
-            background: 'linear-gradient(135deg, #0D47A1 0%, #1565C0 100%)',
+            background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryHover} 100%)`,
             color: 'white',
             display: 'flex',
             alignItems: 'center',
@@ -286,11 +330,11 @@ export default function VoterProfile() {
 
           {/* Header Info */}
           <div style={{ flex: 1 }}>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#0f172a', letterSpacing: '-0.5px' }}>
+            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: colors.textHeading, letterSpacing: '-0.5px' }}>
               {voter.name_marathi || `${voter.first_name || ''} ${voter.middle_name || ''} ${voter.surname || ''}`}
             </h1>
             {voter.name_english && voter.name_marathi && (
-              <p style={{ margin: '4px 0 0', fontSize: 16, color: '#64748b' }}>
+              <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textMuted }}>
                 {voter.name_english}
               </p>
             )}
@@ -377,8 +421,8 @@ export default function VoterProfile() {
                 padding: '16px 24px',
                 background: activeTab === tab.id ? 'white' : 'transparent',
                 border: 'none',
-              borderBottom: activeTab === tab.id ? '3px solid #0D47A1' : '3px solid transparent',
-              color: activeTab === tab.id ? '#0D47A1' : '#424242',
+              borderBottom: activeTab === tab.id ? `3px solid ${colors.primary}` : '3px solid transparent',
+              color: activeTab === tab.id ? colors.primary : colors.textSecondary,
                 fontSize: 14,
                 fontWeight: activeTab === tab.id ? 600 : 500,
                 cursor: 'pointer',
@@ -401,79 +445,79 @@ export default function VoterProfile() {
         {/* Personal Info Tab */}
         {activeTab === 'personal' && (
           <div>
-            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: colors.textHeading, display: 'flex', alignItems: 'center', gap: 8 }}>
               <User size={20} /> वैयक्तिक माहिती / Personal Information
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
               <div>
                 <label className="label">मराठी नाव / Marathi Name</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.name_marathi || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">English Name</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.name_english || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">आडनाव / Surname</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.surname_marathi || voter.surname || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">मतदार ओळखपत्र / Voter ID</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.voter_id}
                 </p>
               </div>
               <div>
                 <label className="label">जन्मतारीख / Date of Birth</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {profile?.dob || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">वय / Age</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.age || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">लिंग / Gender</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.gender === 'M' ? 'पुरुष / Male' : voter.gender === 'F' ? 'स्त्री / Female' : voter.gender || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">जात / Caste</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.caste || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">जात वर्ग / Caste Category</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {profile?.caste_category || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">शिक्षण / Education</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {profile?.education || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">व्यवसाय / Occupation</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {profile?.occupation || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">वर्धापन दिन / Anniversary Date</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {profile?.anniversary_date || '—'}
                 </p>
               </div>
@@ -485,7 +529,7 @@ export default function VoterProfile() {
         {activeTab === 'contact' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: colors.textHeading, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Smartphone size={20} /> संपर्क माहिती / Contact Information
               </h2>
               <button onClick={() => setShowEditModal(true)} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -496,37 +540,37 @@ export default function VoterProfile() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
                 <div>
                   <label className="label">मोबाईल नंबर / Mobile Number</label>
-                  <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                     {profile?.mobile || '—'}
                   </p>
                 </div>
                 <div>
                   <label className="label">Mobile (Secondary)</label>
-                  <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                     {profile?.mobile_secondary || '—'}
                   </p>
                 </div>
                 <div>
                   <label className="label">ईमेल / Email</label>
-                  <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                     {profile?.email || '—'}
                   </p>
                 </div>
                 <div>
                   <label className="label">रेशन कार्ड प्रकार / Ration Card Type</label>
-                  <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                     {profile?.ration_card_type || '—'}
                   </p>
                 </div>
                 <div style={{ gridColumn: 'span 2' }}>
                   <label className="label">पत्ता (मराठी) / Address (Marathi)</label>
-                  <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                     {profile?.address_marathi || '—'}
                   </p>
                 </div>
                 <div>
                   <label className="label">आधार (मास्क केलेला) / Aadhaar (Masked)</label>
-                  <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                  <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                     {profile?.aadhaar_masked || '—'}
                   </p>
                 </div>
@@ -564,7 +608,7 @@ export default function VoterProfile() {
                       </span>
                     )}
                     {!profile?.social_ids?.facebook && !profile?.social_ids?.instagram && !profile?.social_ids?.twitter && !profile?.social_ids?.whatsapp && !profile?.social_ids?.youtube && !profile?.social_ids?.linkedin && (
-                      <span style={{ color: '#64748b' }}>—</span>
+                      <span style={{ color: colors.textMuted }}>—</span>
                     )}
                   </div>
                 </div>
@@ -575,25 +619,25 @@ export default function VoterProfile() {
         {/* Administrative Tab */}
         {activeTab === 'administrative' && (
           <div>
-            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: colors.textHeading, display: 'flex', alignItems: 'center', gap: 8 }}>
               <ClipboardList size={20} /> प्रशासकीय माहिती / Administrative Information
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
               <div>
                 <label className="label">बुथ नंबर / Booth Number</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.booth_number || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">अनुक्रमांक / Serial Number</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.serial_number || '—'}
                 </p>
               </div>
               <div>
                 <label className="label">विधानसभा मतदारसंघ / Assembly Constituency</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {voter.assembly_constituency || '—'}
                 </p>
               </div>
@@ -607,10 +651,10 @@ export default function VoterProfile() {
               </div>
               <div>
                 <label className="label">गाव / Village</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {profile?.village || '—'}
                   {profile?.villages?.new_gan && (
-                    <span style={{ fontSize: 13, color: '#64748b', marginLeft: 8 }}>
+                    <span style={{ fontSize: 13, color: colors.textMuted, marginLeft: 8 }}>
                       (गण: {profile.villages.new_gan})
                     </span>
                   )}
@@ -618,13 +662,13 @@ export default function VoterProfile() {
               </div>
               <div>
                 <label className="label">नवीन गट / New Gat</label>
-                <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                   {profile?.villages?.new_gat || '—'}
                 </p>
               </div>
               <div style={{ gridColumn: 'span 2' }}>
                 <label className="label">आयात तारीख / Import Date</label>
-                <p style={{ margin: '4px 0 0', fontSize: 14, color: '#64748b' }}>
+                <p style={{ margin: '4px 0 0', fontSize: 14, color: colors.textMuted }}>
                   {new Date(voter.created_at).toLocaleString('en-IN')}
                 </p>
               </div>
@@ -635,30 +679,67 @@ export default function VoterProfile() {
         {/* Family Tab */}
         {activeTab === 'family' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: colors.textHeading, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Home size={20} /> कुटुंब माहिती / Family Information
               </h2>
-              <button onClick={() => setShowLinkModal(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Plus size={14} /> Link Family Member
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                {familyInfo?.role === 'head' && familyInfo.family_id && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowReassignHeadModal(true)}
+                      className="btn-secondary"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}
+                    >
+                      <Crown size={14} /> कुटुंब प्रमुख बदला / Change household
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => dissolveHousehold()}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontWeight: 600,
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: `1px solid ${colors.error}`,
+                        background: '#fff',
+                        color: colors.error,
+                        cursor: 'pointer',
+                        fontSize: 14,
+                      }}
+                    >
+                      <Trash2 size={14} /> कुटुंब काढा / Remove household
+                    </button>
+                  </>
+                )}
+                <button type="button" onClick={() => setShowLinkModal(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Plus size={14} /> Link Family Member
+                </button>
+              </div>
             </div>
 
             {familyInfo?.role === 'head' && (
               <div>
                 <div style={{ 
                   padding: 16, 
-                  background: '#E3F0FF', 
+                  background: colors.primaryLight, 
                   borderRadius: 8, 
-                  border: '1px solid #90CAF9',
+                  border: `1px solid ${colors.primaryBorderLight}`,
                   marginBottom: 20 
                 }}>
-                  <p style={{ margin: 0, color: '#0D47A1', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <p style={{ margin: 0, color: colors.primary, fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Crown size={14} /> कुटुंब प्रमुख / Family Head
+                  </p>
+                  <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.textMuted, lineHeight: 1.45 }}>
+                    This person is the household head in the portal. Rel. / संबंध (e.g. HSBN) on the roll is separate from linked members.
+                    सदस्य जोडण्यासाठी वरच्या &quot;Link Family Member&quot; वापरा.
                   </p>
                 </div>
 
-                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
+                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: colors.textHeading }}>
                   कुटुंब सदस्य / Family Members ({familyInfo.members?.length || 0})
                 </h3>
 
@@ -686,39 +767,70 @@ export default function VoterProfile() {
                           }}
                         >
                           <div>
-                            <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
+                            <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: colors.textHeading }}>
                               {member.name}
                             </p>
-                            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
+                            <p style={{ margin: '4px 0 0', fontSize: 13, color: colors.textMuted }}>
                               नाते / Relationship: <span className="badge badge-info">{member.relationship_marathi || member.relationship}</span>
                             </p>
                           </div>
                         </Link>
-                        <button
-                          onClick={e => { e.preventDefault(); openMoveModal(member); }}
-                          style={{
-                            padding: '6px 14px',
-                            border: '1px solid #0D47A1',
-                            borderRadius: 8,
-                            background: '#E3F0FF',
-                            color: '#0D47A1',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                          }}
-                        >
-                          <ArrowRightLeft size={12} /> Move
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.preventDefault();
+                              unlinkFamilyMember(member);
+                            }}
+                            style={{
+                              padding: '6px 14px',
+                              border: `1px solid ${colors.borderLight}`,
+                              borderRadius: 8,
+                              background: '#fff',
+                              color: colors.textMuted,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <Trash2 size={12} /> Remove
+                          </button>
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.preventDefault();
+                              openMoveModal(member);
+                            }}
+                            style={{
+                              padding: '6px 14px',
+                              border: `1px solid ${colors.primary}`,
+                              borderRadius: 8,
+                              background: colors.primaryLight,
+                              color: colors.primary,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <ArrowRightLeft size={12} /> Move
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: 32, background: '#F5F7FA', borderRadius: 8 }}>
-                    <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Users size={32} color="#94a3b8" /></div>
-                    <p style={{ margin: 0, color: '#64748b', fontSize: 14 }}>No family members linked yet</p>
+                  <div style={{ textAlign: 'center', padding: 32, background: colors.pageBg, borderRadius: 8 }}>
+                    <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Users size={32} color={colors.textSubtle} /></div>
+                    <p style={{ margin: 0, color: colors.textMuted, fontSize: 14 }}>No family members linked in this portal yet.</p>
+                    <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.textSubtle, lineHeight: 1.45 }}>
+                      Portal families are built by linking voters here; the voter list API does not return other members in the same row.
+                    </p>
                   </div>
                 )}
               </div>
@@ -727,10 +839,10 @@ export default function VoterProfile() {
             {familyInfo?.role === 'member' && familyInfo.head && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: colors.textHeading }}>
                     कुटुंब प्रमुख / Family Head
                   </h3>
-                  <button onClick={() => openMoveModal()} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: '1px solid #0D47A1', borderRadius: 8, background: '#E3F0FF', color: '#0D47A1', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  <button onClick={() => openMoveModal()} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: `1px solid ${colors.primary}`, borderRadius: 8, background: colors.primaryLight, color: colors.primary, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                     <ArrowRightLeft size={14} /> Move to Another Family
                   </button>
                 </div>
@@ -749,17 +861,17 @@ export default function VoterProfile() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: colors.textHeading, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Crown size={14} /> {familyInfo.head.name}
                       </p>
                     </div>
-                    <div style={{ color: '#0D47A1', fontSize: 20 }}>→</div>
+                    <div style={{ color: colors.primary, fontSize: 20 }}>→</div>
                   </div>
                 </Link>
 
                 {familyInfo.siblings && familyInfo.siblings.length > 0 && (
                   <>
-                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
+                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: colors.textHeading }}>
                       इतर सदस्य / Other Members ({familyInfo.siblings.length})
                     </h3>
                     <div style={{ display: 'grid', gap: 12 }}>
@@ -778,14 +890,14 @@ export default function VoterProfile() {
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                              <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
+                              <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: colors.textHeading }}>
                                 {sibling.name}
                               </p>
-                              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
+                              <p style={{ margin: '4px 0 0', fontSize: 13, color: colors.textMuted }}>
                                 नाते: <span className="badge badge-info">{sibling.relationship_marathi || sibling.relationship}</span>
                               </p>
                             </div>
-                            <div style={{ color: '#0D47A1', fontSize: 20 }}>→</div>
+                            <div style={{ color: colors.primary, fontSize: 20 }}>→</div>
                           </div>
                         </Link>
                       ))}
@@ -796,10 +908,10 @@ export default function VoterProfile() {
             )}
 
             {familyInfo?.role === 'none' && (
-              <div style={{ textAlign: 'center', padding: 48, background: '#F5F7FA', borderRadius: 8 }}>
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><Users size={48} color="#94a3b8" /></div>
+              <div style={{ textAlign: 'center', padding: 48, background: colors.pageBg, borderRadius: 8 }}>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><Users size={48} color={colors.textSubtle} /></div>
                 <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 600 }}>कुटुंब जोडलेले नाही / No Family Linked</h3>
-                <p style={{ margin: '0 0 24px', color: '#64748b', fontSize: 14 }}>
+                <p style={{ margin: '0 0 24px', color: colors.textMuted, fontSize: 14 }}>
                   Link this voter to a family or mark as family head
                 </p>
                 <button onClick={() => setShowLinkModal(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -830,7 +942,7 @@ export default function VoterProfile() {
         {activeTab === 'servicerequests' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: colors.textHeading, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FileText size={20} /> सेवा विनंत्या / Service Requests
               </h2>
               <button onClick={() => setShowNewRequestModal(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -838,11 +950,11 @@ export default function VoterProfile() {
               </button>
             </div>
             {srLoading ? (
-              <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>Loading...</div>
+              <div style={{ textAlign: 'center', padding: 40, color: colors.textSubtle }}>Loading...</div>
             ) : serviceRequests.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 48, background: '#F5F7FA', borderRadius: 8 }}>
-                <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><FileText size={40} color="#94a3b8" /></div>
-                <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 14 }}>No service requests for this voter</p>
+              <div style={{ textAlign: 'center', padding: 48, background: colors.pageBg, borderRadius: 8 }}>
+                <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><FileText size={40} color={colors.textSubtle} /></div>
+                <p style={{ margin: '0 0 16px', color: colors.textMuted, fontSize: 14 }}>No service requests for this voter</p>
                 <button onClick={() => setShowNewRequestModal(true)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <Plus size={14} /> New Request / नवीन विनंती
                 </button>
@@ -856,12 +968,12 @@ export default function VoterProfile() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                            <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#64748b' }}>#{r.id.slice(0, 8)}</span>
+                            <span style={{ fontFamily: 'monospace', fontSize: 12, color: colors.textMuted }}>#{r.id.slice(0, 8)}</span>
                             <span style={{ padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>{r.status}</span>
                           </div>
-                          <div style={{ fontSize: 15, fontWeight: 600, color: '#0f172a' }}>{r.service_type_name}</div>
-                          {r.notes && <div style={{ fontSize: 13, color: '#64748b', marginTop: 6 }}>{r.notes}</div>}
-                          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>
+                          <div style={{ fontSize: 15, fontWeight: 600, color: colors.textHeading }}>{r.service_type_name}</div>
+                          {r.notes && <div style={{ fontSize: 13, color: colors.textMuted, marginTop: 6 }}>{r.notes}</div>}
+                          <div style={{ fontSize: 12, color: colors.textSubtle, marginTop: 8 }}>
                             Raised: {new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} · Updated: {new Date(r.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </div>
                         </div>
@@ -885,7 +997,7 @@ export default function VoterProfile() {
         {/* Assignment Tab */}
         {activeTab === 'assignment' && (
           <div>
-            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, color: colors.textHeading, display: 'flex', alignItems: 'center', gap: 8 }}>
               <HardHat size={20} /> नियुक्ती माहिती / Assignment Information
             </h2>
             <div style={{ display: 'grid', gap: 24 }}>
@@ -898,14 +1010,14 @@ export default function VoterProfile() {
                   <div style={{ display: 'grid', gap: 12 }}>
                     <div>
                       <label className="label">नाव / Name</label>
-                      <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                      <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                         {profile.workers.name}
                       </p>
                     </div>
                     {profile.workers.mobile && (
                       <div>
                         <label className="label">मोबाइल नं / Mobile</label>
-                        <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
                           <Phone size={14} /> {profile.workers.mobile}
                         </p>
                       </div>
@@ -913,7 +1025,7 @@ export default function VoterProfile() {
                     {profile.workers.epic_number && (
                       <div>
                         <label className="label">EPIC Number</label>
-                        <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                        <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                           {profile.workers.epic_number}
                         </p>
                       </div>
@@ -925,27 +1037,27 @@ export default function VoterProfile() {
               </div>
 
               {/* Employee Info */}
-              <div className="card" style={{ background: '#E3F0FF', border: '1px solid #90CAF9' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#0D47A1', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div className="card" style={{ background: colors.primaryLight, border: `1px solid ${colors.primaryBorderLight}` }}>
+                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: colors.primary, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Briefcase size={16} /> कर्मचारी / Employee
                 </h3>
                 {profile?.employees ? (
                   <div style={{ display: 'grid', gap: 12 }}>
                     <div>
                       <label className="label">नाव / Name</label>
-                      <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                      <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                         {profile.employees.name}
                       </p>
                     </div>
                     <div>
                       <label className="label">कर्मचारी आय डी / Employee ID</label>
-                        <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
                         <CreditCard size={14} /> {profile.employees.employee_id}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <p style={{ margin: 0, color: '#0D47A1' }}>No employee assigned</p>
+                  <p style={{ margin: 0, color: colors.primary }}>No employee assigned</p>
                 )}
               </div>
 
@@ -957,14 +1069,14 @@ export default function VoterProfile() {
                 <div style={{ display: 'grid', gap: 12 }}>
                   <div>
                     <label className="label">गाव / Village</label>
-                    <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                    <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                       {profile?.village || '—'}
                     </p>
                   </div>
                   {profile?.villages?.new_gan && (
                     <div>
                       <label className="label">नवीन गण / New Gan</label>
-                      <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                      <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                         {profile.villages.new_gan}
                       </p>
                     </div>
@@ -972,7 +1084,7 @@ export default function VoterProfile() {
                   {profile?.villages?.new_gat && (
                     <div>
                       <label className="label">नवीन गट / New Gat</label>
-                      <p style={{ margin: '4px 0 0', fontSize: 16, color: '#0f172a', fontWeight: 500 }}>
+                      <p style={{ margin: '4px 0 0', fontSize: 16, color: colors.textHeading, fontWeight: 500 }}>
                         {profile.villages.new_gat}
                       </p>
                     </div>
@@ -991,9 +1103,9 @@ export default function VoterProfile() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Edit Profile / प्रोफाइल संपादित करा</h3>
-                <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Update name, contact, and profile details</div>
+                <div style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>Update name, contact, and profile details</div>
               </div>
-              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
+              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: colors.textSubtle, display: 'flex', alignItems: 'center' }}><X size={20} /></button>
             </div>
             <VoterProfileEditForm
               voter={voter}
@@ -1008,7 +1120,27 @@ export default function VoterProfile() {
           </div>
         </div>
       )}
-      {showLinkModal && <FamilyLinkModal voter={voter} onClose={onFamilyLinked} />}
+      {showLinkModal && (
+        <FamilyLinkModal
+          voter={voter}
+          onClose={() => setShowLinkModal(false)}
+          onLinked={() => {
+            setShowLinkModal(false);
+            refetchFamilyInfo();
+          }}
+        />
+      )}
+      {showReassignHeadModal && voter && familyInfo?.family_id && (
+        <FamilyReassignHeadModal
+          voter={voter}
+          familyId={familyInfo.family_id}
+          onClose={() => setShowReassignHeadModal(false)}
+          onReassigned={() => {
+            setShowReassignHeadModal(false);
+            refetchFamilyInfo();
+          }}
+        />
+      )}
       {showMoveModal && (
         <FamilyMoveModal
           voter={moveModalMember || voter}

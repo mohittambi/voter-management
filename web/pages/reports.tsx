@@ -12,6 +12,7 @@ import {
   ChevronUp, ChevronDown, Search,
 } from 'lucide-react';
 import { apiUrl } from '../lib/api';
+import { colors as themeColors } from '../lib/colors';
 
 type DateRange = {
   start: string;
@@ -141,7 +142,7 @@ export default function ReportsPage() {
       <DashboardLayout>
         <div>
           <div style={{ marginBottom: 32 }}>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: themeColors.textHeading, display: 'flex', alignItems: 'center', gap: 10 }}>
               <BarChart3 size={28} /> अहवाल / Reports & Analytics
             </h1>
             <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: 14 }}>
@@ -233,7 +234,7 @@ export default function ReportsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
               {/* Status Breakdown */}
               <div className="card">
-              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
+              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: themeColors.textHeading }}>
                 स्थिती विश्लेषण / Status Breakdown
               </h3>
               <div style={{ display: 'grid', gap: 12 }}>
@@ -261,7 +262,7 @@ export default function ReportsPage() {
                         background: status === 'Active' ? '#10b981' : '#ef4444',
                         borderRadius: 4
                       }}></div>
-                      <span style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', minWidth: 60, textAlign: 'right' }}>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: themeColors.textHeading, minWidth: 60, textAlign: 'right' }}>
                         {count}
                       </span>
                     </div>
@@ -272,7 +273,7 @@ export default function ReportsPage() {
 
             {/* Gender Breakdown */}
             <div className="card">
-              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
+              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: themeColors.textHeading }}>
                 लिंग विभाजन / Gender Distribution
               </h3>
               <div style={{ display: 'grid', gap: 12 }}>
@@ -291,7 +292,7 @@ export default function ReportsPage() {
                       borderRadius: 8,
                       border: '1px solid #e2e8f0'
                     }}>
-                      <span style={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: themeColors.textHeading }}>
                         {genderLabel}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -301,7 +302,7 @@ export default function ReportsPage() {
                           background: gender === 'M' ? '#3b82f6' : '#ec4899',
                           borderRadius: 4
                         }}></div>
-                        <span style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', minWidth: 60, textAlign: 'right' }}>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: themeColors.textHeading, minWidth: 60, textAlign: 'right' }}>
                           {count}
                         </span>
                       </div>
@@ -320,7 +321,7 @@ export default function ReportsPage() {
 
             {/* Age Groups */}
             <div className="card">
-              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
+              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: themeColors.textHeading }}>
                 वयोगट / Age Groups
               </h3>
               <div style={{ display: 'grid', gap: 12 }}>
@@ -334,7 +335,7 @@ export default function ReportsPage() {
                     borderRadius: 8,
                     border: '1px solid #e2e8f0'
                   }}>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: themeColors.textHeading }}>
                       {group} years
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -344,7 +345,7 @@ export default function ReportsPage() {
                         background: '#8b5cf6',
                         borderRadius: 4
                       }}></div>
-                      <span style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', minWidth: 60, textAlign: 'right' }}>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: themeColors.textHeading, minWidth: 60, textAlign: 'right' }}>
                         {count}
                       </span>
                     </div>
@@ -355,7 +356,7 @@ export default function ReportsPage() {
 
             {/* Village-wise Count */}
             <div className="card">
-              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
+              <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: themeColors.textHeading }}>
                 गावनिहाय / Village-wise Distribution
               </h3>
               <div style={{ display: 'grid', gap: 12 }}>
@@ -372,7 +373,7 @@ export default function ReportsPage() {
                       borderRadius: 8,
                       border: '1px solid #e2e8f0'
                     }}>
-                      <span style={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: themeColors.textHeading }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={13} /> {village}</span>
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -382,7 +383,7 @@ export default function ReportsPage() {
                           background: '#10b981',
                           borderRadius: 4
                         }}></div>
-                        <span style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', minWidth: 60, textAlign: 'right' }}>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: themeColors.textHeading, minWidth: 60, textAlign: 'right' }}>
                           {count}
                         </span>
                       </div>
@@ -393,7 +394,7 @@ export default function ReportsPage() {
 
           {/* Booth-wise Analysis (Detailed Table) */}
           <div className="card" style={{ marginTop: 24 }}>
-            <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
+            <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: themeColors.textHeading }}>
               बुथनिहाय विश्लेषण / Booth-wise Analysis
             </h3>
             <div style={{ overflowX: 'auto' }}>
@@ -422,10 +423,10 @@ export default function ReportsPage() {
                       const percentage = ((count / (stats.totals.voters || 1)) * 100).toFixed(1);
                       return (
                         <tr key={booth} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '12px 16px', fontSize: 15, fontWeight: 600, color: '#0f172a' }}>
+                          <td style={{ padding: '12px 16px', fontSize: 15, fontWeight: 600, color: themeColors.textHeading }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><VoteIcon size={13} /> {booth}</span>
                           </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
+                          <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: 16, fontWeight: 700, color: themeColors.textHeading }}>
                             {count}
                           </td>
                           <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: 14, color: '#64748b' }}>
@@ -491,7 +492,7 @@ export default function ReportsPage() {
           {/* Worker Performance Section */}
           <div className="card" style={{ marginTop: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: themeColors.textHeading, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <UserCheck size={18} /> कार्यकर्ता कामगिरी / Staff Performance Metrics
               </h3>
               <button
@@ -562,7 +563,7 @@ export default function ReportsPage() {
                               return (
                                 <tr key={worker.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                   <td style={{ padding: '12px 16px' }}>
-                                    <div style={{ fontSize: 15, fontWeight: 600, color: '#0f172a' }}>
+                                    <div style={{ fontSize: 15, fontWeight: 600, color: themeColors.textHeading }}>
                                       {idx + 1}. {worker.name}
                                     </div>
                                     {worker.mobile && (
@@ -571,7 +572,7 @@ export default function ReportsPage() {
                                       </div>
                                     )}
                                   </td>
-                                  <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
+                                  <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 16, fontWeight: 700, color: themeColors.textHeading }}>
                                     {worker.assigned_voters}
                                   </td>
                                   <td style={{ padding: '12px 16px', textAlign: 'center' }}>
@@ -582,10 +583,10 @@ export default function ReportsPage() {
                                       {worker.active_rate}%
                                     </div>
                                   </td>
-                                  <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#0f172a' }}>
+                                  <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 15, fontWeight: 600, color: themeColors.textHeading }}>
                                     {worker.families_covered}
                                   </td>
-                                  <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#0f172a' }}>
+                                  <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 15, fontWeight: 600, color: themeColors.textHeading }}>
                                     {worker.villages_covered}
                                   </td>
                                   <td style={{ padding: '12px 16px', textAlign: 'center' }}>

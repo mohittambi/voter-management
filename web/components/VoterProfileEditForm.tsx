@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { apiUrl } from '../lib/api';
+import { colors } from '../lib/colors';
 
 export type ProfileUpdateResult = { profile: any; master: any | null };
 
@@ -92,7 +93,7 @@ export default function VoterProfileEditForm({
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
-        <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Name / नाव</h4>
+        <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: colors.textHeading }}>Name / नाव</h4>
         <div style={{ marginBottom: 16 }}>
           <label className="label">Voter ID (EPIC) / मतदार ओळखपत्र</label>
           <input

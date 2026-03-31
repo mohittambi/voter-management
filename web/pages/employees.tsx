@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { apiUrl } from '../lib/api';
+import { colors } from '../lib/colors';
 import { supabase } from '../contexts/AuthContext';
 
 type Employee = {
@@ -225,7 +226,7 @@ export default function EmployeesPage() {
               return (
                 <div key={`map-${emp.id}`} style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
                   <div style={{ padding: '12px 14px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: colors.textHeading }}>
                       {emp.name} <span style={{ fontFamily: 'monospace', fontWeight: 500, color: '#64748b' }}>({emp.employee_id})</span>
                       <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 999, padding: '2px 8px' }}>
                         {emp.assigned_count ?? voters.length} assigned
@@ -327,7 +328,7 @@ export default function EmployeesPage() {
                             {voters.map((voter, idx) => (
                               <tr key={`${emp.id}-${voter.id}-${idx}`} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
                                 <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600 }}>
-                                  <Link href={`/voter/${voter.id}`} style={{ color: '#0f172a', textDecoration: 'none' }}>{voter.name || 'Unnamed voter'}</Link>
+                                  <Link href={`/voter/${voter.id}`} style={{ color: colors.textHeading, textDecoration: 'none' }}>{voter.name || 'Unnamed voter'}</Link>
                                 </td>
                                 <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', color: '#334155' }}>{voter.voter_id || '—'}</td>
                                 <td style={{ padding: '10px 14px', fontSize: 13, color: '#334155' }}>{voter.mobile || '—'}</td>

@@ -21,12 +21,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { count: totalProfiles },
       { count: totalFamilies },
       { count: totalWorkers },
+      { count: totalEmployees },
       { count: totalVillages },
     ] = await Promise.all([
       supabase.from('master_voters').select('*', { count: 'exact', head: true }),
       supabase.from('voter_profiles').select('*', { count: 'exact', head: true }),
       supabase.from('families').select('*', { count: 'exact', head: true }),
       supabase.from('workers').select('*', { count: 'exact', head: true }),
+      supabase.from('employees').select('*', { count: 'exact', head: true }),
       supabase.from('villages').select('*', { count: 'exact', head: true }),
     ]);
 
@@ -89,6 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         profiles: totalProfiles || 0,
         families: totalFamilies || 0,
         workers: totalWorkers || 0,
+        employees: totalEmployees || 0,
         villages: totalVillages || 0,
       },
       serviceRequests: {
